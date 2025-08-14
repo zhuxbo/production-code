@@ -1,0 +1,81 @@
+<h2>系统环境检查</h2>
+
+<!-- PHP版本 -->
+<div class="requirement {{PHP_VERSION_STATUS}}">
+    <strong>PHP版本:</strong> {{PHP_VERSION}}
+    <small>(要求: {{REQUIRED_PHP_VERSION}})</small>
+</div>
+
+<!-- PHP扩展 -->
+<div class="requirement">
+    <strong>PHP扩展:</strong>
+    <span class="toggle-btn" onclick="toggleExtensions()">展开/折叠</span>
+    <div
+        id="extensions-list"
+        style="display: none; margin-top: 10px; margin-left: 20px"
+    >
+        {{PHP_EXTENSIONS_LIST}}
+    </div>
+    <div style="margin-top: 15px">{{PHP_EXTENSIONS_SUMMARY}}</div>
+</div>
+
+<!-- 必需的PHP函数 -->
+<div class="requirement">
+    <strong>必需的PHP函数:</strong>
+    <span class="toggle-btn" onclick="toggleRequiredFunctions()"
+        >展开/折叠</span
+    >
+    <div
+        id="required-functions-list"
+        style="display: none; margin-top: 10px; margin-left: 20px"
+    >
+        {{REQUIRED_PHP_FUNCTIONS_LIST}}
+    </div>
+    <div style="margin-top: 15px">{{REQUIRED_PHP_FUNCTIONS_SUMMARY}}</div>
+</div>
+
+<!-- 可选的PHP函数 -->
+<div class="requirement">
+    <strong>可选的PHP函数:</strong>
+    <span class="toggle-btn" onclick="toggleOptionalFunctions()"
+        >展开/折叠</span
+    >
+    <div
+        id="optional-functions-list"
+        style="display: none; margin-top: 10px; margin-left: 20px"
+    >
+        {{OPTIONAL_PHP_FUNCTIONS_LIST}}
+    </div>
+    <div style="margin-top: 15px">{{OPTIONAL_PHP_FUNCTIONS_SUMMARY}}</div>
+</div>
+
+<!-- 目录权限 -->
+<div class="requirement">
+    <strong>目录权限:</strong>
+    <span class="toggle-btn" onclick="togglePermissions()">展开/折叠</span>
+    <div
+        id="permissions-list"
+        style="display: none; margin-top: 10px; margin-left: 20px"
+    >
+        {{DIRECTORY_PERMISSIONS_LIST}}
+    </div>
+    <div style="margin-top: 15px">{{DIRECTORY_PERMISSIONS_SUMMARY}}</div>
+</div>
+
+<!-- Composer -->
+<div class="requirement {{COMPOSER_STATUS}}">
+    <strong>Composer:</strong> {{COMPOSER_VALUE}}
+    <small>(要求: 必须安装)</small>
+</div>
+
+<!-- JDK -->
+<div class="requirement {{JDK_STATUS}}">
+    <strong>JDK (Java Development Kit):</strong> {{JDK_VALUE}}
+    <small>(要求: 推荐安装 (用于生成JKS证书))</small>
+</div>
+
+<!-- 错误信息 -->
+{{ERRORS_SECTION}}
+
+<!-- 警告信息 -->
+{{WARNINGS_SECTION}}

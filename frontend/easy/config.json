@@ -1,0 +1,8 @@
+{
+  "baseURL": "/api/easy",
+  "siteURL": "https://www.pzo.cn",
+  "helpURL": "https://help.pzo.cn",
+  "hkVerifyURL": "https://43.128.4.245/batchVerify",
+  "euVerifyURL": "https://43.157.80.238/batchVerify",
+  "usVerifyURL": "https://43.130.58.132/batchVerify"
+}
