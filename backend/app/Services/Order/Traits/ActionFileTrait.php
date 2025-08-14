@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\OrderService\Traits;
+namespace App\Services\Order\Traits;
 
 use App\Models\Order;
 use App\Traits\ApiResponse;

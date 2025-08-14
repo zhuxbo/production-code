@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\OrderService\Traits;
+namespace App\Services\Order\Traits;
 
 use App\Bootstrap\ApiExceptions;
 use App\Models\Order;

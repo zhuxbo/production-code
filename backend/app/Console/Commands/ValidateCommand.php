@@ -4,8 +4,8 @@ namespace App\Console\Commands;
 
 use App\Models\DomainValidationRecord;
 use App\Models\Order;
-use App\Services\OrderService\Action;
-use App\Services\OrderService\Utils\VerifyUtil;
+use App\Services\Order\Action;
+use App\Services\Order\Utils\VerifyUtil;
 use Illuminate\Console\Command;
 use Throwable;
 

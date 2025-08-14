@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\OrderService\Api\default;
+namespace App\Services\Order\Api\default;
 
 use App\Bootstrap\ApiExceptions;
 use App\Models\CaLog;

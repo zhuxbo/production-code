@@ -9,7 +9,7 @@ use App\Http\Requests\Product\IndexRequest;
 use App\Http\Requests\Product\StoreRequest;
 use App\Http\Requests\Product\UpdateRequest;
 use App\Models\Product;
-use App\Services\OrderService\Action;
+use App\Services\Order\Action;
 
 class ProductController extends BaseController
 {

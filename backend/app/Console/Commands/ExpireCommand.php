@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Cert;
 use App\Models\Order;
 use App\Models\User;
-use App\Services\OrderService\Action;
+use App\Services\Order\Action;
 use Illuminate\Console\Command;
 
 class ExpireCommand extends Command

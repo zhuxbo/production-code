@@ -6,7 +6,7 @@ namespace App\Http\Controllers\Callback;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Services\OrderService\Action;
+use App\Services\Order\Action;
 use Illuminate\Http\Request;
 
 class SslController extends Controller

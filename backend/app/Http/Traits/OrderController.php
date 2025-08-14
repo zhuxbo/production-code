@@ -4,7 +4,7 @@ namespace App\Http\Traits;
 
 use App\Http\Requests\Order\GetIdsRequest;
 use App\Models\DomainValidationRecord;
-use App\Services\OrderService\Action;
+use App\Services\Order\Action;
 use Throwable;
 
 /**

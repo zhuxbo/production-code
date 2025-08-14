@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\OrderService;
+namespace App\Services\Order;
 
 use App\Exceptions\ApiResponseException;
 use App\Http\Requests\Product\StoreRequest;
@@ -12,15 +12,15 @@ use App\Models\Cert;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Transaction;
-use App\Services\OrderService\Api\Api;
-use App\Services\OrderService\Traits\ActionBatchTrait;
-use App\Services\OrderService\Traits\ActionCallbackTrait;
-use App\Services\OrderService\Traits\ActionFileTrait;
-use App\Services\OrderService\Traits\ActionSendTrait;
-use App\Services\OrderService\Traits\ActionTrait;
-use App\Services\OrderService\Utils\FindUtil;
-use App\Services\OrderService\Utils\OrderUtil;
-use App\Services\OrderService\Utils\VerifyUtil;
+use App\Services\Order\Api\Api;
+use App\Services\Order\Traits\ActionBatchTrait;
+use App\Services\Order\Traits\ActionCallbackTrait;
+use App\Services\Order\Traits\ActionFileTrait;
+use App\Services\Order\Traits\ActionSendTrait;
+use App\Services\Order\Traits\ActionTrait;
+use App\Services\Order\Utils\FindUtil;
+use App\Services\Order\Utils\OrderUtil;
+use App\Services\Order\Utils\VerifyUtil;
 use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;

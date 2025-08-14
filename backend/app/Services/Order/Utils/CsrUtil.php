@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\OrderService\Utils;
+namespace App\Services\Order\Utils;
 
 use App\Traits\ApiResponseStatic;
 

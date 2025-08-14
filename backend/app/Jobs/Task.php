@@ -6,7 +6,7 @@ namespace App\Jobs;
 
 use App\Exceptions\ApiResponseException;
 use App\Models\Task as TaskModel;
-use App\Services\OrderService\Action;
+use App\Services\Order\Action;
 use App\Utils\Email;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;

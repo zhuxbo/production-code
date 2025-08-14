@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Task\GetIdsRequest;
 use App\Http\Requests\Task\IndexRequest;
 use App\Models\Task;
-use App\Services\OrderService\Action;
+use App\Services\Order\Action;
 
 class TaskController extends Controller
 {

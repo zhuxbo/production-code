@@ -4,7 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Requests\Product\IndexRequest;
 use App\Models\Product;
-use App\Services\OrderService\Utils\OrderUtil;
+use App\Services\Order\Utils\OrderUtil;
 
 class ProductController extends BaseController
 {

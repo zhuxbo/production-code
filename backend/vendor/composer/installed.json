@@ -1359,17 +1359,17 @@
         },
         {
             "name": "laravel/framework",
-            "version": "v11.45.0",
-            "version_normalized": "11.45.0.0",
+            "version": "v11.45.1",
+            "version_normalized": "11.45.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/framework.git",
-                "reference": "d0730deb427632004d24801be7ca1ed2c10fbc4e"
+                "reference": "b09ba32795b8e71df10856a2694706663984a239"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/framework/zipball/d0730deb427632004d24801be7ca1ed2c10fbc4e",
-                "reference": "d0730deb427632004d24801be7ca1ed2c10fbc4e",
+                "url": "https://api.github.com/repos/laravel/framework/zipball/b09ba32795b8e71df10856a2694706663984a239",
+                "reference": "b09ba32795b8e71df10856a2694706663984a239",
                 "shasum": "",
                 "mirrors": [
                     {
@@ -1531,7 +1531,7 @@
                 "symfony/postmark-mailer": "Required to enable support for the Postmark mail transport (^7.0).",
                 "symfony/psr-http-message-bridge": "Required to use PSR-7 bridging features (^7.0)."
             },
-            "time": "2025-05-20T15:15:58+00:00",
+            "time": "2025-06-03T14:01:40+00:00",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -3357,17 +3357,17 @@
         },
         {
             "name": "phpoffice/phpspreadsheet",
-            "version": "3.9.1",
-            "version_normalized": "3.9.1.0",
+            "version": "3.9.3",
+            "version_normalized": "3.9.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPOffice/PhpSpreadsheet.git",
-                "reference": "56f334ace62fc8301c98d425272cbf0a00eb848d"
+                "reference": "668d3b5fdebf7f74627620d6648f77662f74b015"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPOffice/PhpSpreadsheet/zipball/56f334ace62fc8301c98d425272cbf0a00eb848d",
-                "reference": "56f334ace62fc8301c98d425272cbf0a00eb848d",
+                "url": "https://api.github.com/repos/PHPOffice/PhpSpreadsheet/zipball/668d3b5fdebf7f74627620d6648f77662f74b015",
+                "reference": "668d3b5fdebf7f74627620d6648f77662f74b015",
                 "shasum": "",
                 "mirrors": [
                     {
@@ -3419,7 +3419,7 @@
                 "mpdf/mpdf": "Option for rendering PDF with PDF Writer",
                 "tecnickcom/tcpdf": "Option for rendering PDF with PDF Writer"
             },
-            "time": "2025-02-08T03:04:52+00:00",
+            "time": "2025-07-23T04:44:46+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -3465,7 +3465,7 @@
             ],
             "support": {
                 "issues": "https://github.com/PHPOffice/PhpSpreadsheet/issues",
-                "source": "https://github.com/PHPOffice/PhpSpreadsheet/tree/3.9.1"
+                "source": "https://github.com/PHPOffice/PhpSpreadsheet/tree/3.9.3"
             },
             "install-path": "../phpoffice/phpspreadsheet"
         },

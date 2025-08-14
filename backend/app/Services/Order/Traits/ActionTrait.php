@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\OrderService\Traits;
+namespace App\Services\Order\Traits;
 
 use App\Bootstrap\ApiExceptions;
 use App\Exceptions\ApiResponseException;
@@ -10,12 +10,12 @@ use App\Models\Cert;
 use App\Models\Order;
 use App\Models\Task;
 use App\Models\Transaction;
-use App\Services\OrderService\Utils\CsrUtil;
-use App\Services\OrderService\Utils\DomainUtil;
-use App\Services\OrderService\Utils\FilterUtil;
-use App\Services\OrderService\Utils\FindUtil;
-use App\Services\OrderService\Utils\OrderUtil;
-use App\Services\OrderService\Utils\ValidatorUtil;
+use App\Services\Order\Utils\CsrUtil;
+use App\Services\Order\Utils\DomainUtil;
+use App\Services\Order\Utils\FilterUtil;
+use App\Services\Order\Utils\FindUtil;
+use App\Services\Order\Utils\OrderUtil;
+use App\Services\Order\Utils\ValidatorUtil;
 use App\Utils\Random;
 use App\Utils\SnowFlake;
 use DateTime;

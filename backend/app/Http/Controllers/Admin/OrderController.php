@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Requests\Order\GetIdsRequest;
 use App\Http\Requests\Order\IndexRequest;
 use App\Models\Order;
-use App\Services\OrderService\Action;
+use App\Services\Order\Action;
 use Throwable;
 class OrderController extends BaseController
 {
