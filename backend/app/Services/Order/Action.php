@@ -63,9 +63,12 @@ class Action
         foreach ($products['data'] as $item) {
             $item['source'] = $source;
 
-            if (empty($item['api_id'])) {
-                $this->error('产品 api_id 不能为空', $item);
+            if (empty($item['code'])) {
+                $this->error('产品 code 不能为空', $item);
             }
+
+            $item['api_id'] = $item['code'];
+            unset($item['code']);
 
             // 根据 api_id 查询产品
             $product = Product::where('source', $source)->where('api_id', $item['api_id'])->first();

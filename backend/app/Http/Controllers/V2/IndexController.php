@@ -67,6 +67,7 @@ class IndexController extends Controller
         $data = [];
         foreach ($res as $item) {
             $cost = [];
+            /** @var Product $item */
             foreach ($item->periods as $period) {
                 $minPrice = OrderUtil::getMinPrice($this->user_id, $item->id, (int) $period);
                 $period = (string) $period;
@@ -81,8 +82,6 @@ class IndexController extends Controller
             $item = $item->toArray();
             $item['periods'] = array_map('intval', $item['periods']);
             $item['cost'] = $cost;
-            $item['api_id'] = $item['code'];
-            unset($item['code']);
             $data[] = $item;
         }
 
@@ -93,7 +92,7 @@ class IndexController extends Controller
     {
         $page = $this->request->input('page', 1) ?? 1;
         $pageSize = $this->request->input('page_size', 100) ?? 100;
-        $status = $this->request->input('status', 'active') ?? 'active';
+        $status = $this->request->input('status', 'all') ?? 'all';
 
         $whereStatus = [];
         $status !== 'all' && $whereStatus[] = ['status', '=', $status];
@@ -137,6 +136,7 @@ class IndexController extends Controller
             ->get();
 
         $data = [];
+        /** @var Order $item */
         foreach ($res as $item) {
             $cert = $item->latestCert->toArray();
             unset($cert['id'], $cert['intermediate_cert']);
@@ -415,7 +415,7 @@ class IndexController extends Controller
 
         $result = array_merge($order->toArray(), $order->latestCert->toArray());
 
-        unset($result['latest_cert_id'], $result['latestCert'], $result['id'], $result['issuer']);
+        unset($result['latest_cert_id'], $result['latest_cert'], $result['id'], $result['issuer']);
 
         $this->success($result);
     }

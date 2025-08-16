@@ -149,7 +149,7 @@ class Api
         $params['admin_firstname'] = $data['contact']['first_name'] ?? 'default';
         $params['admin_lastname'] = $data['contact']['last_name'] ?? 'default';
         $params['admin_phone'] = $data['contact']['phone'] ?? '13900000000';
-        $params['admin_title'] = $data['contact']['job'] ?? 'IT';
+        $params['admin_title'] = $data['contact']['title'] ?? 'IT';
         $params['admin_email'] = $data['contact']['email'] ?? 'zhuxbo@qq.com';
 
         $params['tech_firstname'] = $params['admin_firstname'];
@@ -268,7 +268,7 @@ class Api
         if ($data['admin_firstname'] !== 'default' || $data['admin_lastname'] !== 'default') {
             $result['contact']['first_name'] = $data['admin_firstname'];
             $result['contact']['last_name'] = $data['admin_lastname'];
-            $result['contact']['job'] = $data['admin_title'];
+            $result['contact']['title'] = $data['admin_title'];
             $result['contact']['phone'] = $data['admin_phone'];
             $result['contact']['email'] = $data['admin_email'];
         }
