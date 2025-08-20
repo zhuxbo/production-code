@@ -130,7 +130,7 @@ class Sdk
             'api' => $uri,
             'params' => $data,
             'response' => $result,
-            'status_code ' => $httpStatusCode,
+            'status_code' => $httpStatusCode,
             'status' => intval($result['code'] ?? 0) === 1 ? 1 : 0,
         ]);
 
