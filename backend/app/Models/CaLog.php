@@ -16,7 +16,6 @@ class CaLog extends BaseModel
         'status_code',
         'status',
         'duration',
-        'status_code ',
     ];
 
     protected $casts = [
