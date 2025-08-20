@@ -96,14 +96,14 @@ class Sdk
      */
     protected function call(string $uri, array $data = [], $method = 'post'): array
     {
-        $apiUrl = get_system_setting('ca', 'url');
+        $apiUrl = rtrim(get_system_setting('ca', 'url'), '/');
         $apiToken = get_system_setting('ca', 'token');
 
         if (! $apiUrl || ! $apiToken) {
             return ['code' => 0, 'msg' => 'Api url or token is not set'];
         }
 
-        $url = $apiUrl.$uri;
+        $url = $apiUrl.'/'.$uri;
 
         $client = new Client;
         try {

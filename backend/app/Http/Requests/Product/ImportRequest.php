@@ -12,7 +12,7 @@ class ImportRequest extends BaseRequest
             'source' => 'required|string',
             'brand' => 'nullable|string',
             'apiId' => 'nullable|string',
-            'forceUpdate' => 'nullable|boolean',
+            'type' => 'nullable|string|in:new,update,all',
         ];
     }
 }

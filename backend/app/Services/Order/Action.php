@@ -48,7 +48,7 @@ class Action
     /**
      * 导入产品
      */
-    public function importProduct(string $source = 'default', string $brand = '', string $api_id = '', bool $forceUpdate = false): void
+    public function importProduct(string $source = 'default', string $brand = '', string $api_id = '', string $type = 'new'): void
     {
         $products = $this->api->getProducts($source, $brand, $api_id);
 
@@ -67,13 +67,13 @@ class Action
                 $this->error('产品 code 不能为空', $item);
             }
 
-            $item['api_id'] = $item['code'];
+            $item['api_id'] = strval($item['code']);
             unset($item['code']);
 
             // 根据 api_id 查询产品
             $product = Product::where('source', $source)->where('api_id', $item['api_id'])->first();
             if ($product) {
-                if ($forceUpdate) {
+                if ($type === 'update' || $type === 'all') {
                     // 使用 UpdateRequest 验证规则
                     $updateRequest = new UpdateRequest;
                     $updateRequest->setProductId($product->id);
@@ -91,21 +91,23 @@ class Action
                     $product->update($item);
                 }
             } else {
-                // 使用 StoreRequest 验证规则
-                $storeRequest = new StoreRequest;
+                if ($type === 'new' || $type === 'all') {
+                    // 使用 StoreRequest 验证规则
+                    $storeRequest = new StoreRequest;
 
-                $item['code'] = $item['api_id'];
-                $validator = Validator::make($item, $storeRequest->rules());
-                $validator->after(function ($validator) use ($storeRequest) {
-                    $storeRequest->setValidator($validator);
-                    $storeRequest->withValidator($validator);
-                });
+                    $item['code'] = $item['api_id'];
+                    $validator = Validator::make($item, $storeRequest->rules());
+                    $validator->after(function ($validator) use ($storeRequest) {
+                        $storeRequest->setValidator($validator);
+                        $storeRequest->withValidator($validator);
+                    });
 
-                if ($validator->fails()) {
-                    $this->error('产品数据验证失败', $validator->errors()->toArray());
+                    if ($validator->fails()) {
+                        $this->error('产品数据验证失败', $validator->errors()->toArray());
+                    }
+
+                    Product::create($item);
                 }
-
-                Product::create($item);
             }
         }
 

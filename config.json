@@ -1,14 +1,14 @@
 {
-  "version": "20250817105118",
-  "build_time": "2025-08-17T10:51:18+00:00",
+  "version": "20250820061047",
+  "build_time": "2025-08-20T06:10:47+00:00",
   "build_module": "all",
   "php_version": "PHP 8.3.24 (cli) (built: Aug  3 2025 08:58:02) (NTS)",
   "node_version": "v18.19.1",
   "composer_version": "Composer version 2.8.10 2025-07-10 19:08:33",
   "commits": {
-    "backend_commit": "8e42acfa4aea4aee218ea1f681114f81a40c9fca",
-    "admin_commit": "1415ea578a0c7a3fce8c5f44dae13c6d290826e2",
-    "user_commit": "784ffe1daeb8d3fc3270e4d35a0cc4f546787afc",
-    "easy_commit": "bac273e8519fafd21422c4da5e4e3ff2519a0bed"
+    "backend_commit": "739cbd4a0dfc0f6c3827de6b3f1dbc9cc17f64b0",
+    "admin_commit": "2f06a85e503bade366150cdff53a6eaf001db8df",
+    "user_commit": "8a1619002c578cc7df3d8b73c7c92ac3846c6f9e",
+    "easy_commit": "0f9c1895f056c122f4fd156e2a4812a8fb0a869a"
   }
 }

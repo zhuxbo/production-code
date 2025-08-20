@@ -548,7 +548,7 @@ class IndexController extends Controller
     public function download(): void
     {
         $order_id = $this->processOrderIdParam();
-        $type = $this->request->input('type', 'all');
+        $type = $this->request->input('type', 'all') ?? 'all';
 
         $this->action->download($order_id, $type);
     }

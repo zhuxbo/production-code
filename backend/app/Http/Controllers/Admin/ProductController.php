@@ -9,6 +9,8 @@ use App\Http\Requests\Product\IndexRequest;
 use App\Http\Requests\Product\StoreRequest;
 use App\Http\Requests\Product\UpdateRequest;
 use App\Models\Product;
+use App\Models\ProductPrice;
+use App\Models\UserLevel;
 use App\Services\Order\Action;
 
 class ProductController extends BaseController
@@ -74,6 +76,15 @@ class ProductController extends BaseController
             ->offset(($currentPage - 1) * $pageSize)
             ->limit($pageSize)
             ->get();
+
+        // 附加价格信息：基础级别（custom=0）下的价格
+        $level_codes = UserLevel::where('custom', 0)
+            ->orderBy('weight')
+            ->pluck('code')
+            ->toArray();
+        $items->each(function ($item) use ($level_codes) {
+            $item->setAttribute('prices', ProductPrice::getProductPrice($item->id, $level_codes));
+        });
 
         $this->success([
             'items' => $items,
@@ -180,9 +191,10 @@ class ProductController extends BaseController
         $source = $validated['source'] ?? 'default';
         $brand = $validated['brand'] ?? '';
         $apiId = $validated['apiId'] ?? '';
-        $forceUpdate = $validated['forceUpdate'] ?? false;
+        // new: 新增, update: 更新, all: 全部
+        $type = $validated['type'] ?? 'new';
 
-        (new Action)->importProduct($source, $brand, $apiId, $forceUpdate);
+        (new Action)->importProduct($source, $brand, $apiId, $type);
     }
 
     /**
