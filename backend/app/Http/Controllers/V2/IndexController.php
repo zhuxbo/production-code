@@ -61,7 +61,7 @@ class IndexController extends Controller
         $where[] = ['status', '=', 1];
 
         $res = Product::where($where)->orderBy('weight', 'ASC')->get();
-        $res->makeHidden(['id', 'api_id', 'cost', 'created_at', 'updated_at']);
+        $res->makeHidden(['id', 'api_id', 'cost', 'status', 'created_at', 'updated_at']);
 
         // 遍历查询结果并获取会员价格
         $data = [];
@@ -344,6 +344,7 @@ class IndexController extends Controller
             'dcv',
             'validation',
             'csr',
+            'private_key',
             'cert',
             'issuer',
             'issued_at',
@@ -415,7 +416,13 @@ class IndexController extends Controller
 
         $result = array_merge($order->toArray(), $order->latestCert->toArray());
 
-        unset($result['latest_cert_id'], $result['latest_cert'], $result['id'], $result['issuer']);
+        // 清理字段 避免覆盖
+        unset($result['latest_cert_id'], $result['latest_cert'], $result['id'], $result['order_id'], $result['issuer']);
+
+        // 避免返回空的 key
+        if (empty($result['private_key'])) {
+            unset($result['private_key']);
+        }
 
         $this->success($result);
     }

@@ -45,11 +45,11 @@ class Invoice extends BaseModel
 
         // 创建前事件
         static::creating(function ($model) {
-            if ($model->status == 'issued') {
+            if ($model->status == 1) {
                 self::createInvoiceLimit($model, 'issue');
             }
 
-            if ($model->status == 'voided') {
+            if ($model->status == 2) {
                 return false;
             }
 
