@@ -238,7 +238,7 @@ class UserController extends BaseController
         }
 
         // 构建登录URL，将token作为参数传递
-        $directLoginUrl = rtrim($siteUrl, '/').'/login?auto_token='.$accessToken;
+        $directLoginUrl = rtrim($siteUrl, '/').'/user/login?auto_token='.$accessToken;
 
         $this->success([
             'access_token' => $accessToken,
