@@ -444,7 +444,7 @@ trait ActionTrait
                     unset($params['contact']);
                 }
             }
-        } else {
+        } else if ($params['action'] !== 'reissue') {
             if (is_int($organization) && $organization > 0) {
                 $params['organization'] = FindUtil::Organization($organization, $userId);
                 $params['organization'] = FilterUtil::filterOrganization($params['organization']->toArray());

@@ -81,6 +81,7 @@ Route::prefix('admin')->middleware('api.admin')->group(function () {
         Route::get('cost/{id}', [ProductController::class, 'getCost'])->where('id', '[0-9]+');
         Route::patch('cost/{id}', [ProductController::class, 'updateCost'])->where('id', '[0-9]+');
         Route::get('source', [ProductController::class, 'getSourceList']);
+        Route::post('export', [ProductController::class, 'export']);
     });
     RouteHelper::registerResourceRoutes('product-price', ProductPriceController::class);
     Route::prefix('product-price')->group(function () {

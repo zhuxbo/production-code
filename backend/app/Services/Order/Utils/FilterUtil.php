@@ -53,7 +53,6 @@ class FilterUtil
             'csr',
             'validation_method',
             'domains',
-            'organization',
             'auto_verify',
         ],
         'organization' => [

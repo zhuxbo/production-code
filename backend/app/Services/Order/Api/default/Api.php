@@ -71,10 +71,6 @@ class Api
             $params['unique_value'] = $data['unique_value'] ?: $this->generateUniqueValue();
         }
 
-        if (isset($data['organization'])) {
-            $params['organization'] = $data['organization'];
-        }
-
         $result = $this->sdk->reissue($params);
 
         return $this->getResult($result);

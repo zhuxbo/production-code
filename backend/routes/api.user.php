@@ -116,9 +116,10 @@ Route::prefix('organization')->middleware('api.user')->group(function () {
 });
 
 // 产品路由
-Route::prefix('product')->middleware('api.user')->group(function () {
+Route::prefix('product')->group(function () {
     Route::get('/', [ProductController::class, 'index']);
     Route::get('{id}', [ProductController::class, 'show'])->where('id', '[0-9]+');
+    Route::post('export', [ProductController::class, 'export'])->middleware('api.user');
 });
 
 // 交易记录路由

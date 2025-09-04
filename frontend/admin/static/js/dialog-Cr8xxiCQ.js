@@ -1,1 +1,0 @@
-import{r as t,o as s,av as a}from"./index-2hNLZh7L.js";function d(){const e=t(600),n=()=>{const o=window.innerWidth;o>2e3?e.value="30%":o>=600?e.value=600:e.value="90%"},i=()=>{n()};return s(()=>{n(),window.addEventListener("resize",i)}),a(()=>{window.removeEventListener("resize",i)}),{dialogSize:e}}export{d as u};
