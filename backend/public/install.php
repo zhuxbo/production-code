@@ -1,4 +1,6 @@
-<?php /** @noinspection DuplicatedCode */
+<?php
+
+/** @noinspection DuplicatedCode */
 
 /**
  * SSL 后端自动安装脚本（使用模板系统）
@@ -166,6 +168,27 @@ if (isset($_POST['action'])) {
                 ]);
 
                 $dbConnected = true;
+
+                // 获取 MySQL 版本
+                $versionResult = $pdo->query('SELECT VERSION()')->fetch();
+                $mysqlVersion = $versionResult[0];
+                // 提取主版本号
+                preg_match('/(\d+\.\d+)/', $mysqlVersion, $versionMatch);
+                $majorVersion = floatval($versionMatch[1] ?? '5.7');
+
+                // 根据版本设置适合的排序规则
+                if ($majorVersion >= 8.0) {
+                    $config['db_collation'] = 'utf8mb4_0900_ai_ci';
+                } else {
+                    $config['db_collation'] = 'utf8mb4_unicode_520_ci';
+                }
+
+                // 保存版本信息到会话
+                $config['mysql_version'] = $mysqlVersion;
+                $config['mysql_major_version'] = $majorVersion;
+
+                // 更新会话中的配置
+                $_SESSION['install_config'] = $config;
 
                 // 检查数据库是否为空
                 $tables = $pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
@@ -700,6 +723,12 @@ elseif ($formStage == 'install') {
     // 从 Session 读取连接状态来显示
     if ($_SESSION['install_db_connected'] ?? false) {
         echo '<div class="requirement success"><strong>数据库连接:</strong> 成功</div>';
+
+        // 显示 MySQL 版本信息
+        if (! empty($config['mysql_version'])) {
+            echo '<div class="requirement info"><strong>MySQL 版本:</strong> '.$config['mysql_version'].'</div>';
+            echo '<div class="requirement info"><strong>排序规则:</strong> '.$config['db_collation'].'</div>';
+        }
         if (($_SESSION['install_db_empty']) === true) {
             echo '<div class="requirement success"><strong>数据库状态:</strong> 空数据库，可以安装</div>';
         } else {
@@ -767,6 +796,16 @@ elseif ($formStage == 'install') {
                 $envTemplate = preg_replace('/DB_DATABASE=.*/', 'DB_DATABASE='.$config['db_database'], $envTemplate);
                 $envTemplate = preg_replace('/DB_USERNAME=.*/', 'DB_USERNAME='.$config['db_username'], $envTemplate);
                 $envTemplate = preg_replace('/DB_PASSWORD=.*/', 'DB_PASSWORD='.$config['db_password'], $envTemplate);
+
+                // 设置 DB_COLLATION（如果 .env.example 中没有，则添加）
+                $dbCollation = $config['db_collation'] ?? 'utf8mb4_unicode_520_ci';
+                if (str_contains($envTemplate, 'DB_COLLATION=')) {
+                    $envTemplate = preg_replace('/DB_COLLATION=.*/', 'DB_COLLATION='.$dbCollation, $envTemplate);
+                } else {
+                    // 在 DB_PASSWORD 后面添加 DB_COLLATION
+                    $envTemplate = preg_replace('/(DB_PASSWORD=.*)/', "$1\nDB_COLLATION=".$dbCollation, $envTemplate);
+                }
+
                 $envTemplate = preg_replace('/REDIS_HOST=.*/', 'REDIS_HOST='.$config['redis_host'], $envTemplate);
                 $envTemplate = preg_replace('/REDIS_PORT=.*/', 'REDIS_PORT='.$config['redis_port'], $envTemplate);
 

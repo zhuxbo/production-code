@@ -536,7 +536,7 @@ class ComposerStaticInit8d2231a651768db008a31546daac9ce0
         'App\\Bootstrap\\ApiMiddleware' => __DIR__ . '/../..' . '/app/Bootstrap/ApiMiddleware.php',
         'App\\Console\\Commands\\AnalyzeCertCommand' => __DIR__ . '/../..' . '/app/Console/Commands/AnalyzeCertCommand.php',
         'App\\Console\\Commands\\ClearAllCacheCommand' => __DIR__ . '/../..' . '/app/Console/Commands/ClearAllCacheCommand.php',
-        'App\\Console\\Commands\\DatabaseStructureFixCommand' => __DIR__ . '/../..' . '/app/Console/Commands/DatabaseStructureFixCommand.php',
+        'App\\Console\\Commands\\DatabaseStructureCommand' => __DIR__ . '/../..' . '/app/Console/Commands/DatabaseStructureCommand.php',
         'App\\Console\\Commands\\ExpireCommand' => __DIR__ . '/../..' . '/app/Console/Commands/ExpireCommand.php',
         'App\\Console\\Commands\\FixCertCommand' => __DIR__ . '/../..' . '/app/Console/Commands/FixCertCommand.php',
         'App\\Console\\Commands\\PurgeCommand' => __DIR__ . '/../..' . '/app/Console/Commands/PurgeCommand.php',

@@ -182,13 +182,13 @@ class ProductController extends BaseController
             return $item;
         });
 
-        return $this->generateExcel($data, 'user');
+        return $this->generateExcel($data);
     }
 
     /**
      * 生成 Excel 文件
      */
-    private function generateExcel($data, $type = 'user')
+    private function generateExcel($data)
     {
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
@@ -214,7 +214,7 @@ class ProductController extends BaseController
             if ($lastProductName !== null && $item->product_name !== $lastProductName) {
                 // 只有多行才合并
                 if ($productStartRow < $row - 1) {
-                    $mergeRanges[] = "A{$productStartRow}:A".($row - 1);
+                    $mergeRanges[] = "A$productStartRow:A".($row - 1);
                 }
                 $productStartRow = $row;
             }
@@ -233,20 +233,20 @@ class ProductController extends BaseController
                 $this->formatPrice($item->alternative_wildcard_price * $priceRate),
             ];
 
-            $sheet->fromArray($values, null, "A{$row}");
+            $sheet->fromArray($values, null, "A$row");
             $row++;
         }
 
         // 处理最后的合并 - 只有多行才合并
         if ($lastProductName !== null && $productStartRow < $row - 1) {
-            $mergeRanges[] = "A{$productStartRow}:A".($row - 1);
+            $mergeRanges[] = "A$productStartRow:A".($row - 1);
         }
 
         // 执行单元格合并
         $this->mergeCells($sheet, $mergeRanges);
 
         // 设置数据区域样式
-        $dataRange = "A2:{$endColumn}".($row - 1);
+        $dataRange = "A2:$endColumn".($row - 1);
         $this->setDataStyle($sheet, $dataRange);
 
         // 自动调整列宽

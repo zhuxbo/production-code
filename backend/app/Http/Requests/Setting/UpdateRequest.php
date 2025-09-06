@@ -80,6 +80,8 @@ class UpdateRequest extends BaseRequest
      */
     protected function prepareForValidation(): void
     {
+        parent::prepareForValidation();
+
         // 如果不是批量更新才处理默认值
         if (! $this->has('settings')) {
             // 如果 is_multiple 未传递或为空，则默认为 false

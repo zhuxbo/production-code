@@ -61,6 +61,8 @@ class StoreRequest extends BaseRequest
      */
     protected function prepareForValidation(): void
     {
+        parent::prepareForValidation();
+
         if (! $this->has('is_multiple') || $this->input('is_multiple') === null) {
             $this->merge([
                 'is_multiple' => false,

@@ -11,7 +11,7 @@ return array(
     'App\\Bootstrap\\ApiMiddleware' => $baseDir . '/app/Bootstrap/ApiMiddleware.php',
     'App\\Console\\Commands\\AnalyzeCertCommand' => $baseDir . '/app/Console/Commands/AnalyzeCertCommand.php',
     'App\\Console\\Commands\\ClearAllCacheCommand' => $baseDir . '/app/Console/Commands/ClearAllCacheCommand.php',
-    'App\\Console\\Commands\\DatabaseStructureFixCommand' => $baseDir . '/app/Console/Commands/DatabaseStructureFixCommand.php',
+    'App\\Console\\Commands\\DatabaseStructureCommand' => $baseDir . '/app/Console/Commands/DatabaseStructureCommand.php',
     'App\\Console\\Commands\\ExpireCommand' => $baseDir . '/app/Console/Commands/ExpireCommand.php',
     'App\\Console\\Commands\\FixCertCommand' => $baseDir . '/app/Console/Commands/FixCertCommand.php',
     'App\\Console\\Commands\\PurgeCommand' => $baseDir . '/app/Console/Commands/PurgeCommand.php',

@@ -60,6 +60,6 @@ return [
 
     'refresh_token_ttl' => [
         'admin' => env('ADMIN_REFRESH_TOKEN_TTL', 1440),
-        'user' => env('USER_REFRESH_TOKEN__TTL', 1440),
+        'user' => env('USER_REFRESH_TOKEN_TTL', 1440),
     ],
 ];

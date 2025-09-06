@@ -444,7 +444,7 @@ trait ActionTrait
                     unset($params['contact']);
                 }
             }
-        } else if ($params['action'] !== 'reissue') {
+        } elseif ($params['action'] !== 'reissue') {
             if (is_int($organization) && $organization > 0) {
                 $params['organization'] = FindUtil::Organization($organization, $userId);
                 $params['organization'] = FilterUtil::filterOrganization($params['organization']->toArray());
@@ -601,6 +601,24 @@ trait ActionTrait
     }
 
     /**
+     * 检查是否应该重试操作（防止循环）
+     */
+    protected function shouldRetryOperation(int $orderId, string $operation, string $reason = '', int $maxRetries = 5): bool
+    {
+        $cacheKey = "retry_{$operation}_{$orderId}_$reason";
+        $retryCount = Cache::get($cacheKey, 0);
+
+        if ($retryCount >= $maxRetries) {
+            return false;
+        }
+
+        // 增加重试次数，缓存24小时
+        Cache::put($cacheKey, $retryCount + 1, 86400);
+
+        return true;
+    }
+
+    /**
      * 删除 unpaid 状态的证书 并 恢复 renew,reissue 原证书的状态
      *
      * @throws Throwable
@@ -730,10 +748,20 @@ trait ActionTrait
         foreach ($task_ids as $task_id) {
             $this->userId && $data['user_id'] = $this->userId;
 
+            // 检查是否已存在相同的执行中任务，避免重复创建
+            $existingTask = Task::where('task_id', $task_id)
+                ->where('action', $action)
+                ->whereIn('status', ['executing'])
+                ->first();
+
+            if ($existingTask) {
+                continue; // 跳过已存在的任务
+            }
+
             $data['task_id'] = $task_id;
             $task = Task::create($data);
             if ($later > 0) {
-                // 队列定时比可执行时间多1秒 避免任务在可执行时间之前执行
+                // 队列定时比可执行时间多3秒 避免任务在可执行时间之前执行
                 \App\Jobs\Task::dispatch(['id' => $task->id])->delay(now()->addSeconds($later + 3))->onQueue('Task');
             } else {
                 \App\Jobs\Task::dispatch(['id' => $task->id])->onQueue('Task');

@@ -1,5 +1,13 @@
 <?php
-// 纯 JS 跳转到 /user，让浏览器重新请求并由 Nginx 匹配路由
+$uri = $_SERVER['REQUEST_URI'];  // 包含路径和参数
+
+// 判断是否需要保留原始路径
+if (preg_match('#^/(pdd|tb)(/.*)?$#i', $uri) || preg_match('#^/tid/[^/]+#i', $uri)) {
+    $target = '/user' . $uri;
+} else {
+    $target = '/user';
+}
+
 echo '<!doctype html>'
    . '<html lang="zh-CN">'
    . '  <head>'
@@ -7,12 +15,12 @@ echo '<!doctype html>'
    . '    <title>Redirecting…</title>'
    . '  </head>'
    . '  <body>'
-   . '    <script>window.location.replace("/user");</script>'
-   . '    <noscript>正在跳转到 <a href="/user">/user</a> …</noscript>'
+   . '    <script>window.location.replace(' . json_encode($target) . ');</script>'
+   . '    <noscript>正在跳转到 <a href="' . htmlspecialchars($target, ENT_QUOTES) . '">' 
+   . htmlspecialchars($target, ENT_QUOTES) . '</a> …</noscript>'
    . '  </body>'
    . '</html>';
 exit;
-
 /**
  * ===================================================================
  * 一个简单的 PHP 路由器 (index.php)

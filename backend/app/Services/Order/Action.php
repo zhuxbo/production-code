@@ -432,9 +432,17 @@ class Action
             // 解析证书
             $data = array_merge($data, $this->parseCert($data['cert']));
 
-            // 有任何一个为空都删除中间证书 避免调用修改器
+            // 签发者和中间证书同时存在才能成功调用修改器
             if (empty($data['issuer']) || empty($data['intermediate_cert'])) {
-                unset($data['intermediate_cert']);
+                $later = $cert->status == 'active' ? 150 : 15;
+
+                // 防止循环：检查重试次数
+                if ($this->shouldRetryOperation($orderId, 'sync', 'intermediate_cert_missing')) {
+                    $this->createTask($orderId, 'sync', $later);
+                    $this->error('中级证书获取失败，请'.$later.'秒后重试');
+                } else {
+                    $this->error('中级证书获取失败次数过多，请手动处理或联系技术支持');
+                }
             }
         }
 

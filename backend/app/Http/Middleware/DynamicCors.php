@@ -38,10 +38,10 @@ class DynamicCors extends HandleCors
             if ($request->getMethod() === 'OPTIONS') {
                 $response = new JsonResponse(null, 204);
 
-                return $this->applyCorsHeaders($response, $origin);
+                return $this->applyCorsHeaders($response, $origin, $request);
             }
 
-            return $this->applyCorsHeaders($next($request), $origin);
+            return $this->applyCorsHeaders($next($request), $origin, $request);
         }
 
         return $next($request);
@@ -86,22 +86,38 @@ class DynamicCors extends HandleCors
     /**
      * 应用 CORS 头到响应
      */
-    private function applyCorsHeaders($response, string $origin)
+    private function applyCorsHeaders($response, string $origin, ?Request $request = null)
     {
         $response->headers->set('Access-Control-Allow-Origin', $origin);
-        $response->headers->set('Access-Control-Allow-Methods', implode(', ', Config::get('cors.allowed_methods')));
-        $response->headers->set('Access-Control-Allow-Headers', implode(', ', Config::get('cors.allowed_headers')));
-        $response->headers->set('Access-Control-Allow-Credentials', Config::get('cors.supports_credentials'));
+
+        // 获取并设置允许的方法，提供默认值
+        $allowedMethods = Config::get('cors.allowed_methods', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']);
+        if (is_array($allowedMethods)) {
+            $response->headers->set('Access-Control-Allow-Methods', implode(', ', $allowedMethods));
+        }
+
+        // 获取并设置允许的头部，提供默认值
+        $allowedHeaders = Config::get('cors.allowed_headers', [
+            'Origin', 'Content-Type', 'Accept', 'Authorization', 'X-Requested-With',
+        ]);
+        if (is_array($allowedHeaders)) {
+            $response->headers->set('Access-Control-Allow-Headers', implode(', ', $allowedHeaders));
+        }
+
+        // 设置凭据支持（必须是字符串）
+        $supportsCredentials = Config::get('cors.supports_credentials', false);
+        $response->headers->set('Access-Control-Allow-Credentials', $supportsCredentials ? 'true' : 'false');
 
         // 添加暴露给前端的头部
-        $exposedHeaders = Config::get('cors.exposed_headers');
-        if ($exposedHeaders) {
+        $exposedHeaders = Config::get('cors.exposed_headers', []);
+        if (is_array($exposedHeaders) && ! empty($exposedHeaders)) {
             $response->headers->set('Access-Control-Expose-Headers', implode(', ', $exposedHeaders));
         }
 
-        // 添加缓存控制头
-        if ($response->headers->has('Access-Control-Allow-Methods')) {
-            $response->headers->set('Access-Control-Max-Age', Config::get('cors.max_age', 7200));
+        // 只在预检请求时添加缓存控制头
+        if ($request && $request->isMethod('OPTIONS') && $response->getStatusCode() === 204) {
+            $maxAge = Config::get('cors.max_age', 7200);
+            $response->headers->set('Access-Control-Max-Age', (string) $maxAge);
         }
 
         return $response;
