@@ -118,7 +118,7 @@ class IndexController extends Controller
 
             $order_id = $result['data']['order_id'] ?? null;
 
-            $this->getData('pay', [$order_id, true, boolval($params['auto_verify'] ?? 0)]);
+            $this->getData('pay', [$order_id, true, boolval($params['issue_verify'] ?? 0)]);
 
             DB::commit();
         } catch (Throwable $e) {
@@ -167,7 +167,7 @@ class IndexController extends Controller
 
             $order_id = $result['data']['order_id'] ?? '';
 
-            $this->getData('pay', [$order_id, true, boolval($params['auto_verify'] ?? 0)]);
+            $this->getData('pay', [$order_id, true, boolval($params['issue_verify'] ?? 0)]);
 
             DB::commit();
         } catch (Throwable $e) {
@@ -222,7 +222,7 @@ class IndexController extends Controller
                 $this->error('Order not found');
             }
 
-            $this->getData('pay', [$order_id, true, boolval($params['auto_verify'] ?? 0)]);
+            $this->getData('pay', [$order_id, true, boolval($params['issue_verify'] ?? 0)]);
 
             DB::commit();
         } catch (Throwable $e) {
@@ -564,6 +564,12 @@ class IndexController extends Controller
      */
     private function convertV1Params(array $params): array
     {
+        // auto_verify 转换
+        if (isset($params['auto_verify'])) {
+            $params['issue_verify'] = $params['auto_verify'];
+            unset($params['auto_verify']);
+        }
+
         // 加密算法转换
         if (isset($params['encryption']['digest_alg'])) {
             $params['encryption']['signature_digest_alg'] = $params['encryption']['digest_alg'];

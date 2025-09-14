@@ -20,8 +20,8 @@ trait OrderController
     public function pay(int $id): void
     {
         $commit = request()->boolean('commit', true);
-        $autoVerify = request()->boolean('auto_verify', true);
-        $this->action->pay($id, $commit, $autoVerify);
+        $issueVerify = request()->boolean('issue_verify', true);
+        $this->action->pay($id, $commit, $issueVerify);
     }
 
     /**
@@ -145,8 +145,8 @@ trait OrderController
     {
         $validated = $request->validated();
         $commit = request()->boolean('commit', true);
-        $autoVerify = request()->boolean('auto_verify', true);
-        $this->action->pay($validated['ids'], $commit, $autoVerify);
+        $issueVerify = request()->boolean('issue_verify', true);
+        $this->action->pay($validated['ids'], $commit, $issueVerify);
     }
 
     /**

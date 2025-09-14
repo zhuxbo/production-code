@@ -34,5 +34,9 @@
     "digicert",
     "trustasia"
   ],
+  "DnsTools": [
+    "https://dns-tools-us.cnssl.com",
+    "https://dns-tools-cn.cnssl.com"
+  ],
   "Beian": "豫ICP备123456789号"
 }

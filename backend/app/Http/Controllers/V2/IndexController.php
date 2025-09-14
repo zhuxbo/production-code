@@ -157,7 +157,7 @@ class IndexController extends Controller
 
     /**
      * 申请
-     * [(string)refer_id,plus,product_code,period,csr_generate,encryption,csr,auto_verify,
+     * [(string)refer_id,plus,product_code,period,csr_generate,encryption,csr,issue_verify,
      *  validation_method,domains,contact,organization]
      *
      * @throws Throwable
@@ -184,7 +184,7 @@ class IndexController extends Controller
 
             $order_id = $result['data']['order_id'] ?? null;
 
-            $this->getData('pay', [$order_id, true, boolval($params['auto_verify'] ?? 0)]);
+            $this->getData('pay', [$order_id, true, boolval($params['issue_verify'] ?? 0)]);
 
             DB::commit();
         } catch (Throwable $e) {
@@ -206,7 +206,7 @@ class IndexController extends Controller
 
     /**
      * 续费
-     * [(string)refer_id,plus,order_id,period,csr_generate,encryption,csr,auto_verify,
+     * [(string)refer_id,plus,order_id,period,csr_generate,encryption,csr,issue_verify,
      *  validation_method,domains,contact,organization]
      *
      * @throws Throwable
@@ -230,7 +230,7 @@ class IndexController extends Controller
 
             $order_id = $result['data']['order_id'] ?? '';
 
-            $this->getData('pay', [$order_id, true, boolval($params['auto_verify'] ?? 0)]);
+            $this->getData('pay', [$order_id, true, boolval($params['issue_verify'] ?? 0)]);
 
             DB::commit();
         } catch (Throwable $e) {
@@ -252,7 +252,7 @@ class IndexController extends Controller
 
     /**
      * 重签
-     * [(string)refer_id,order_id,csr_generate,encryption,csr,auto_verify,
+     * [(string)refer_id,order_id,csr_generate,encryption,csr,issue_verify,
      *  validation_method,domains,organization]
      *
      * @throws Throwable
@@ -282,7 +282,7 @@ class IndexController extends Controller
                 throw new Exception('Order not found');
             }
 
-            $this->getData('pay', [$order_id, true, boolval($params['auto_verify'] ?? 0)]);
+            $this->getData('pay', [$order_id, true, boolval($params['issue_verify'] ?? 0)]);
 
             DB::commit();
         } catch (Throwable $e) {

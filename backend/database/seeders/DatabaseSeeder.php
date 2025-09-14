@@ -53,6 +53,7 @@ class DatabaseSeeder extends Seeder
             ['group_id' => 1, 'key' => 'name', 'type' => 'string', 'options' => null, 'is_multiple' => 0, 'value' => null, 'description' => '站点名称', 'weight' => 2],
             ['group_id' => 1, 'key' => 'callbackToken', 'type' => 'string', 'options' => null, 'is_multiple' => 0, 'value' => null, 'description' => '回调令牌', 'weight' => 3],
             ['group_id' => 1, 'key' => 'adminEmail', 'type' => 'string', 'options' => null, 'is_multiple' => 0, 'value' => null, 'description' => '管理员邮箱（用于接收系统错误通知）', 'weight' => 4],
+            ['group_id' => 1, 'key' => 'dnsTools', 'type' => 'array', 'options' => null, 'is_multiple' => 0, 'value' => ['us' => 'https://dns-tools-us.cnssl.com', 'cn' => 'https://dns-tools-cn.cnssl.com'], 'description' => 'DNS工具', 'weight' => 5],
             ['group_id' => 2, 'key' => 'sources', 'type' => 'array', 'options' => null, 'is_multiple' => 0, 'value' => ['default' => 'Default'], 'description' => '来源', 'weight' => 1],
             ['group_id' => 2, 'key' => 'url', 'type' => 'string', 'options' => null, 'is_multiple' => 0, 'value' => null, 'description' => 'Default接口URL', 'weight' => 2],
             ['group_id' => 2, 'key' => 'token', 'type' => 'string', 'options' => null, 'is_multiple' => 0, 'value' => null, 'description' => 'Default接口令牌', 'weight' => 3],

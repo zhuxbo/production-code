@@ -13,11 +13,21 @@ class VerifyUtil
 {
     use ApiResponseStatic;
 
-    private const array API_URLS = [
-        'hk' => 'https://43.128.4.245/',
-        'us' => 'https://43.130.58.132/',
-        'eu' => 'https://43.157.80.238/',
-    ];
+    private static ?array $dnsToolsUrls = null;
+
+    /**
+     * 获取验证工具URLs
+     */
+    private static function getDnsToolsUrls(): array
+    {
+        if (self::$dnsToolsUrls === null) {
+            $urls = get_system_setting('site', 'dnsTools');
+            // 确保返回数组格式
+            self::$dnsToolsUrls = is_array($urls) ? $urls : [];
+        }
+
+        return self::$dnsToolsUrls;
+    }
 
     /**
      * 验证域名DNS记录，支持故障转移
@@ -29,10 +39,10 @@ class VerifyUtil
             'verify' => false, // 关闭SSL证书验证
         ]);
 
-        foreach (self::API_URLS as $url) {
+        foreach (self::getDnsToolsUrls() as $url) {
             try {
-                $response = $client->post($url.'autoVerify', [
-                    'form_params' => [
+                $response = $client->post($url.'/api/domain/issue-verify', [
+                    'json' => [
                         'brand' => $ca,
                         'domains' => $domains,
                     ],
@@ -49,9 +59,9 @@ class VerifyUtil
     }
 
     /**
-     * 自动验证订单域名
+     * 验证订单域名是否能签发
      */
-    public static function autoVerify(array $order_ids): void
+    public static function issueVerify(array $order_ids): void
     {
         // 查询符合条件的订单
         $orders = Order::with(['latestCert', 'product'])
@@ -63,19 +73,33 @@ class VerifyUtil
             return;
         }
 
-        $verifyResult = [];
+        $resultErrors = [];
+        $lastErrorMsg = '域名签发验证失败，请联系管理员';
 
         // 遍历订单进行验证
         foreach ($orders as $order) {
+            // 检查必要字段是否存在
+            if (empty($order->product->ca) || empty($order->latestCert->alternative_names)) {
+                continue;
+            }
+
             $result = self::verifyDomains($order->product->ca, $order->latestCert->alternative_names);
 
             // 如果验证返回了错误信息
             if ($result['code'] == 0) {
-                $verifyResult[$order->id] = $result['data'];
+                $lastErrorMsg = $result['msg'] ?? $lastErrorMsg;
+                $errors = [];
+                foreach ($result['errors'] as $error) {
+                    if ($error['valid'] === false) {
+                        $errors[$error['display_domain']]['说明'] = $error['message'];
+                        $errors[$error['display_domain']]['错误'] = $error['errors'];
+                    }
+                }
+                $resultErrors[] = $errors;
             }
         }
 
-        empty($verifyResult) || self::error('域名基础验证失败，请联系管理员', $verifyResult);
+        empty($resultErrors) || self::error($lastErrorMsg, $resultErrors);
     }
 
     /**
@@ -88,10 +112,10 @@ class VerifyUtil
             'verify' => false, // 关闭SSL证书验证
         ]);
 
-        foreach (self::API_URLS as $url) {
+        foreach (self::getDnsToolsUrls() as $url) {
             try {
                 // 发送json数据
-                $response = $client->post($url.'batchVerify', [
+                $response = $client->post($url.'/api/dcv/verify', [
                     'json' => $validation,
                 ]);
 

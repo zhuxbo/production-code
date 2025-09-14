@@ -17,7 +17,7 @@ use Illuminate\Validation\ValidationException;
  * ValidatorService::validate($params);
  *
  * $params 为待验证的数据数组，其中的键值可包含：
- *   - action / channel / plus / auto_verify / refer_id / unique_value
+ *   - action / channel / plus / issue_verify / refer_id / unique_value
  *   - contact / organization / domains / period / validation_method / product 等
  *
  * 基本规则验证使用 Laravel 的 Validator，
@@ -30,7 +30,7 @@ use Illuminate\Validation\ValidationException;
  *   - 存在 period 则调用 validatePeriod
  *   - 存在 validation_method 则调用 validateValidationMethod
  *   - 存在 encryption 则调用 validateEncryption
- *   - 其他字段例如 action、channel、plus、auto_verify、refer_id、unique_value 使用全局 rules 校验
+ *   - 其他字段例如 action、channel、plus、issue_verify、refer_id、unique_value 使用全局 rules 校验
  *
  * 完整性说明：
  *  - 包含特殊验证方法：validateDomains、validateSansMaxCount、validateDomain、validatePeriod、validateValidationMethod、validateEncryption。
@@ -45,7 +45,7 @@ class ValidatorUtil
      */
     protected static array $rules = [];
 
-    // auto_verify 仅在API提交时验证
+    // issue_verify 仅在API提交时验证
     protected static function init(): void
     {
         self::$rules = [
@@ -54,7 +54,7 @@ class ValidatorUtil
                     'action' => ['required', 'in:new,renew,reissue'],
                     'channel' => ['required', 'in:web,admin,api,acme'],
                     'plus' => ['in:0,1'],
-                    'auto_verify' => ['in:0,1'],
+                    'issue_verify' => ['in:0,1'],
                     'refer_id' => ['alpha_num', 'size:32', 'unique:certs,refer_id'],
                     'unique_value' => ['alpha_num', 'between:16,24', 'unique:certs,unique_value,null,id,order_id,null'],
                     'order_id' => ['required_if:action,renew,reissue', 'numeric'],
@@ -63,7 +63,7 @@ class ValidatorUtil
                     'action' => '操作',
                     'channel' => '来源',
                     'plus' => '是否赠送时间',
-                    'auto_verify' => '是否自动验证',
+                    'issue_verify' => '是否进行签发验证',
                     'refer_id' => '参考ID',
                     'unique_value' => '参考ID',
                     'order_id' => '订单ID',
@@ -136,7 +136,7 @@ class ValidatorUtil
         // 特殊处理 unique_value 的 order_id 关联
         if (isset($params['order_id'])) {
             // 使用正则表达式只替换最后一个 null
-            $rules['unique_value'][2] = preg_replace('/,null$/', ','.$params['order_id'], $rules['unique_value'][2]);
+            $rules['unique_value'][2] = preg_replace('/,null$/', ',' . $params['order_id'], $rules['unique_value'][2]);
         }
 
         $validator = Validator::make($params, $rules, [], $attributes);
@@ -367,20 +367,20 @@ class ValidatorUtil
                 str_starts_with($domain, '*.')
                 && in_array($validationMethod, ['http', 'https', 'file'])
             ) {
-                $errors[$index][] = $domain.' 通配符域名不能使用 '.$validationMethod.' 方法';
+                $errors[$index][] = $domain . ' 通配符域名不能使用 ' . $validationMethod . ' 方法';
             }
 
             if (
                 filter_var($domain, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6)
                 && ! in_array($validationMethod, ['http', 'https', 'file'])
             ) {
-                $errors[$index][] = $domain.' IP 只能使用文件验证方法';
+                $errors[$index][] = $domain . ' IP 只能使用文件验证方法';
             }
         }
 
         $repeat = array_diff_assoc($domains, array_unique($domains));
         if (! empty($repeat)) {
-            $errors['repeat'] = '域名重复: '.implode(',', $repeat);
+            $errors['repeat'] = '域名重复: ' . implode(',', $repeat);
         }
 
         // 过滤掉空的错误信息，避免返回空数组
@@ -437,7 +437,7 @@ class ValidatorUtil
     private static function checkDomainCount(int $count, int $max, string $type = ''): string
     {
         if ($count > $max) {
-            return $type."域名数量不能超过 $max";
+            return $type . "域名数量不能超过 $max";
         }
 
         return '';
@@ -451,7 +451,7 @@ class ValidatorUtil
         $type = DomainUtil::getType($domain);
 
         if (! in_array($type, $types)) {
-            return '域名 '.$domain.' 类型错误: '.$type.' 不允许';
+            return '域名 ' . $domain . ' 类型错误: ' . $type . ' 不允许';
         }
 
         return '';
@@ -474,7 +474,7 @@ class ValidatorUtil
         $periods = is_array($periods) ? $periods : explode(',', (string) $periods);
 
         if ($period && ! in_array($period, $periods)) {
-            return '有效期只能使用 '.implode(',', $periods);
+            return '有效期只能使用 ' . implode(',', $periods);
         }
 
         return '';
@@ -499,7 +499,7 @@ class ValidatorUtil
             : explode(',', (string) $validationMethods);
 
         if ($validationMethod && ! in_array($validationMethod, $validationMethods)) {
-            return '验证方法只能使用 '.implode(',', $validationMethods);
+            return '验证方法只能使用 ' . implode(',', $validationMethods);
         }
 
         return '';
@@ -519,14 +519,14 @@ class ValidatorUtil
         // 验证加密算法
         if (isset($encryption['alg'])) {
             if (! in_array(strtolower($encryption['alg']), $product['encryption_alg'])) {
-                $errors[] = '加密算法只能使用 '.strtoupper(implode(',', $product['encryption_alg']));
+                $errors[] = '加密算法只能使用 ' . strtoupper(implode(',', $product['encryption_alg']));
             }
         }
 
         // 验证摘要算法
         if (isset($encryption['digest_alg'])) {
             if (! in_array(strtolower($encryption['digest_alg']), $product['signature_digest_alg'])) {
-                $errors[] = '摘要算法只能使用 '.strtoupper(implode(',', $product['signature_digest_alg']));
+                $errors[] = '摘要算法只能使用 ' . strtoupper(implode(',', $product['signature_digest_alg']));
             }
         }
 

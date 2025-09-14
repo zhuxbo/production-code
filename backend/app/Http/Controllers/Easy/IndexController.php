@@ -134,6 +134,7 @@ class IndexController extends Controller
                     'validation_methods' => $product['validation_methods'],
                 ],
                 'validation' => $order->latestCert->validation[0] ?? [],
+                'status' => 'processing',
             ]);
         }
 
@@ -141,6 +142,7 @@ class IndexController extends Controller
             $this->success([
                 'step' => 2,
                 'validation' => $order->latestCert->validation[0] ?? [],
+                'status' => 'approving',
             ]);
         }
 
@@ -150,6 +152,7 @@ class IndexController extends Controller
                 'validation' => $order->latestCert->validation[0] ?? [],
                 'cert' => $order->latestCert->cert."\n".$order->latestCert->intermediate_cert,
                 'key' => $order->latestCert->private_key,
+                'status' => 'active',
             ]);
         }
 

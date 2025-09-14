@@ -9,6 +9,7 @@ use App\Http\Requests\Product\StoreRequest;
 use App\Http\Requests\Product\UpdateRequest;
 use App\Models\Callback;
 use App\Models\Cert;
+use App\Models\Chain;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Transaction;
@@ -122,7 +123,7 @@ class Action
     public function new(array $params): void
     {
         $later = $this->checkDuplicate('new', [$params, $this->userId], 10);
-        $later && $this->error('参数重复，请在 '.$later.' 秒后再提交申请');
+        $later && $this->error('参数重复，请在 ' . $later . ' 秒后再提交申请');
 
         $params = $this->initParams($params);
 
@@ -159,7 +160,7 @@ class Action
     public function batchNew(array $params): void
     {
         $later = $this->checkDuplicate('batchNew', [$params, $this->userId], 10);
-        $later && $this->error('参数重复，请在 '.$later.' 秒后再提交批量申请');
+        $later && $this->error('参数重复，请在 ' . $later . ' 秒后再提交批量申请');
 
         $domains = explode(',', $params['domains'] ?? '');
 
@@ -201,7 +202,7 @@ class Action
     public function renew(array $params): void
     {
         $later = $this->checkDuplicate('renew', [$params, $this->userId], 10);
-        $later && $this->error('参数重复，请在 '.$later.' 秒后再提交续费');
+        $later && $this->error('参数重复，请在 ' . $later . ' 秒后再提交续费');
 
         $this->new($params);
     }
@@ -214,7 +215,7 @@ class Action
     public function reissue(array $params): void
     {
         $later = $this->checkDuplicate('reissue', [$params, $this->userId], 10);
-        $later && $this->error('参数重复，请在 '.$later.' 秒后再提交重签');
+        $later && $this->error('参数重复，请在 ' . $later . ' 秒后再提交重签');
 
         $params = $this->initParams($params);
 
@@ -260,14 +261,14 @@ class Action
      *
      * @throws Throwable
      */
-    public function pay(int|string|array $orderIds, bool $commit = true, bool $autoVerify = false): void
+    public function pay(int|string|array $orderIds, bool $commit = true, bool $issueVerify = false): void
     {
         $orderIds = is_array($orderIds) ? $orderIds : explode(',', (string) $orderIds);
         $orderIds = array_map('intval', $orderIds);
 
         count($orderIds) > 20 && $this->error('订单数量不能超过20');
 
-        $autoVerify && VerifyUtil::autoVerify($orderIds);
+        $issueVerify && VerifyUtil::issueVerify($orderIds);
 
         if (count($orderIds) === 1) {
             $charge = $this->charge($orderIds[0], false);
@@ -432,14 +433,17 @@ class Action
             // 解析证书
             $data = array_merge($data, $this->parseCert($data['cert']));
 
-            // 签发者和中间证书同时存在才能成功调用修改器
-            if (empty($data['issuer']) || empty($data['intermediate_cert'])) {
+            // 查询中间证书
+            $chain = Chain::where('common_name', $data['issuer'])->first();
+
+            // 数据库和接口返回的中间证书都不存在 则重新同步
+            if (empty($chain?->intermediate_cert) && empty($data['intermediate_cert'])) {
                 $later = $cert->status == 'active' ? 150 : 15;
 
                 // 防止循环：检查重试次数
                 if ($this->shouldRetryOperation($orderId, 'sync', 'intermediate_cert_missing')) {
                     $this->createTask($orderId, 'sync', $later);
-                    $this->error('中级证书获取失败，请'.$later.'秒后重试');
+                    $this->error('中级证书获取失败，请' . $later . '秒后重试');
                 } else {
                     $this->error('中级证书获取失败次数过多，请手动处理或联系技术支持');
                 }
@@ -566,7 +570,7 @@ class Action
     public function revalidate(int $orderId): void
     {
         $later = $this->checkDuplicate('revalidate', [$orderId, $this->userId]);
-        $later && $this->error('请在 '.$later.' 秒后再提交验证');
+        $later && $this->error('请在 ' . $later . ' 秒后再提交验证');
 
         $order = FindUtil::Order($orderId);
         $cert = $order->latestCert;
@@ -585,7 +589,7 @@ class Action
     public function updateDCV(int $orderId, string $method): void
     {
         $later = $this->checkDuplicate('updateDCV', [$orderId, $this->userId]);
-        $later && $this->error('请在 '.$later.' 秒后再提交修改');
+        $later && $this->error('请在 ' . $later . ' 秒后再提交修改');
 
         $order = FindUtil::Order($orderId);
         $cert = $order->latestCert;
@@ -625,7 +629,7 @@ class Action
     public function removeMdcDomain(int $orderId): void
     {
         $later = $this->checkDuplicate('removeMdcDomain', [$orderId, $this->userId], 120);
-        $later && $this->error('请在 '.$later.' 秒后再提交删除');
+        $later && $this->error('请在 ' . $later . ' 秒后再提交删除');
 
         $order = FindUtil::Order($orderId);
         $cert = $order->latestCert;
@@ -662,7 +666,7 @@ class Action
         if (in_array($status, ['processing', 'approving', 'active'])) {
             $refundPeriod = $product->refund_period ?? 0;
             $order->created_at->timestamp < time() - 86400 * $refundPeriod
-            && $this->error("订单已超过 $refundPeriod 天不能取消");
+                && $this->error("订单已超过 $refundPeriod 天不能取消");
 
             // 2分钟后取消
             $order->latestCert->update(['status' => 'cancelling']);
@@ -710,7 +714,7 @@ class Action
             $product = FindUtil::Product($order->product_id);
 
             $order->created_at->timestamp < time() - 86400 * $product->refund_period
-            && $this->error('订单已超过'.$product->refund_period.'天');
+                && $this->error('订单已超过' . $product->refund_period . '天');
 
             $order->latestCert->status === 'cancelled' && $this->error('订单已取消');
             $order->latestCert->status != 'cancelling' && $this->error('订单状态不是取消中');

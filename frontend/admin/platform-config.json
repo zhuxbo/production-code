@@ -33,5 +33,9 @@
     "digicert",
     "ssltrus",
     "trustasia"
+  ],
+  "DnsTools": [
+    "https://dns-tools-us.cnssl.com",
+    "https://dns-tools-cn.cnssl.com"
   ]
 }

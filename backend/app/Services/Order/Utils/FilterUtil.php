@@ -24,7 +24,7 @@ class FilterUtil
             'domains',
             'contact',
             'organization',
-            'auto_verify',
+            'issue_verify',
         ],
         'renew' => [
             'order_id',
@@ -40,7 +40,7 @@ class FilterUtil
             'domains',
             'contact',
             'organization',
-            'auto_verify',
+            'issue_verify',
         ],
         'reissue' => [
             'order_id',
@@ -53,7 +53,7 @@ class FilterUtil
             'csr',
             'validation_method',
             'domains',
-            'auto_verify',
+            'issue_verify',
         ],
         'organization' => [
             'name',
