@@ -48,7 +48,7 @@ class StoreRequest extends BaseRequest
             'refund_period' => 'required|integer|min:0|max:30',
             'remark' => 'nullable|string|max:500',
             'weight' => 'required|integer|min:0',
-            'status' => 'required|integer|in:0,1',
+            'status' => 'integer|in:0,1',
         ];
     }
 
