@@ -11,7 +11,7 @@ class UpdateRequest extends BaseRequest
         $chainId = $this->route('id', 0);
 
         return [
-            'common_name' => 'required|string|max:255|unique:chains,common_name,' . $chainId,
+            'common_name' => 'required|string|max:255|unique:chains,common_name,'.$chainId,
             'intermediate_cert' => 'required|string',
         ];
     }

@@ -136,6 +136,119 @@
     autoRefreshTimer: null, // 自动刷新定时器
   };
 
+  // 通用复制功能（针对移动端优化）
+  async function copyToClipboard(text) {
+    // 方案1：优先使用 Clipboard API（现代浏览器）
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return Promise.resolve();
+      } catch (err) {
+        console.warn("Clipboard API failed, trying fallback:", err);
+        // 继续尝试备用方案
+      }
+    }
+
+    // 方案2：使用 textarea + execCommand（移动端优化版）
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "absolute";
+    textarea.style.left = "-9999px";
+    textarea.style.top = "0";
+    textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
+
+    // 移动端需要设置这些属性
+    textarea.setAttribute("readonly", "");
+    textarea.setAttribute("contenteditable", "true");
+
+    document.body.appendChild(textarea);
+
+    // 保存当前焦点
+    const currentFocus = document.activeElement;
+
+    try {
+      // 移动端浏览器的选择策略
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        // 移动端：先聚焦
+        textarea.focus();
+
+        // 使用 setSelectionRange 选中所有文本
+        textarea.setSelectionRange(0, textarea.value.length);
+
+        // 某些 Android 浏览器需要这个
+        if (/Android/i.test(navigator.userAgent)) {
+          // 创建一个 range 并选中
+          const selection = window.getSelection();
+          const range = document.createRange();
+          range.selectNodeContents(textarea);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+      } else {
+        // 桌面端
+        textarea.select();
+      }
+
+      // 执行复制
+      const success = document.execCommand("copy");
+
+      // 恢复焦点
+      if (currentFocus && typeof currentFocus.focus === "function") {
+        currentFocus.focus();
+      }
+
+      document.body.removeChild(textarea);
+
+      if (success) {
+        return Promise.resolve();
+      } else {
+        // 如果 execCommand 失败，尝试方案3
+        throw new Error("execCommand failed");
+      }
+    } catch (err) {
+      document.body.removeChild(textarea);
+
+      // 方案3：对于某些浏览器，创建一个可见但快速消失的输入框
+      // 这是最后的兜底方案，用户可能会看到闪烁
+      const input = document.createElement("input");
+      input.value = text;
+      input.style.position = "fixed";
+      input.style.top = "50%";
+      input.style.left = "50%";
+      input.style.transform = "translate(-50%, -50%)";
+      input.style.zIndex = "999999";
+      input.style.background = "white";
+      input.style.border = "1px solid #ccc";
+      input.style.padding = "10px";
+      input.style.fontSize = "16px"; // 防止 iOS 自动缩放
+
+      document.body.appendChild(input);
+
+      return new Promise((resolve, reject) => {
+        input.focus();
+        input.select();
+
+        // 给用户一点时间，然后尝试复制
+        setTimeout(() => {
+          try {
+            const success = document.execCommand("copy");
+            document.body.removeChild(input);
+
+            if (success) {
+              resolve();
+            } else {
+              reject(new Error("无法复制，请长按选择文本手动复制"));
+            }
+          } catch (e) {
+            document.body.removeChild(input);
+            reject(new Error("无法复制，请长按选择文本手动复制"));
+          }
+        }, 100);
+      });
+    }
+  }
+
   // Toast 提示
   function showToast(message, type = "info") {
     const container = document.getElementById("toast-container");
@@ -969,8 +1082,7 @@
       (window.appState.validation?.method || "TXT").toString().toUpperCase();
     const text = `域名: ${domain}\n主机记录: ${host}\n记录类型: ${type}\n记录值: ${value}`;
 
-    navigator.clipboard
-      .writeText(text)
+    copyToClipboard(text)
       .then(() => {
         showToast("DNS记录已复制到剪贴板", "success");
       })
@@ -1169,8 +1281,7 @@
         if (target) {
           let text = target.value || target.textContent;
 
-          navigator.clipboard
-            .writeText(text)
+          copyToClipboard(text)
             .then(() => {
               showToast("复制成功", "success");
             })
