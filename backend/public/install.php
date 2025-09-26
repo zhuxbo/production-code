@@ -434,23 +434,26 @@ if (! $composerInstalled) {
     $errors[] = 'Composer未安装或无法执行';
 }
 
-// 检查JDK是否已安装
-$jdkInstalled = false;
-$jdkVersion = 'N/A';
+// 检查keytool是否可用
+$keytoolInstalled = false;
+$keytoolVersion = 'N/A';
 
 if ($execEnabled) {
-    exec('java -version 2>&1', $jdkOutput, $jdkReturnVar);
-    if ($jdkReturnVar === 0) {
-        $jdkInstalled = true;
-        if (! empty($jdkOutput)) {
-            preg_match('/(?:version |openjdk version )"([^"]+)"/', implode("\n", $jdkOutput), $matches);
-            $jdkVersion = $matches[1] ?? htmlspecialchars($jdkOutput[0]);
+    exec('keytool -help 2>&1', $keytoolOutput, $keytoolReturnVar);
+    if ($keytoolReturnVar === 0) {
+        $keytoolInstalled = true;
+        // 尝试获取keytool版本信息
+        exec('keytool -version 2>&1', $versionOutput, $versionReturnVar);
+        if ($versionReturnVar === 0 && ! empty($versionOutput)) {
+            $keytoolVersion = htmlspecialchars($versionOutput[0]);
+        } else {
+            $keytoolVersion = '可用';
         }
     }
 }
 
-if (! $jdkInstalled) {
-    $warnings[] = '未检测到JDK或java命令无法执行。如果需要使用keytool生成JKS格式证书等功能，请确保JDK已正确安装并配置到系统PATH。';
+if (! $keytoolInstalled) {
+    $warnings[] = '未检测到keytool命令。如果需要使用keytool生成JKS格式证书等功能，请确保JDK或JRE已正确安装并配置到系统PATH。';
 }
 
 // ===========================================
@@ -690,8 +693,8 @@ if ($formStage == 'env') {
         'COMPOSER_STATUS' => $composerInstalled ? 'success' : 'error',
         'COMPOSER_VALUE' => $composerInstalled ? '已安装' : '未安装或无法执行',
 
-        'JDK_STATUS' => $jdkInstalled ? 'success' : 'warning',
-        'JDK_VALUE' => $jdkInstalled ? ('已安装 (版本: '.$jdkVersion.')') : '未安装或无法执行',
+        'JDK_STATUS' => $keytoolInstalled ? 'success' : 'warning',
+        'JDK_VALUE' => $keytoolInstalled ? ('keytool可用 (版本: '.$keytoolVersion.')') : 'keytool不可用',
 
         'ERRORS_SECTION' => TemplateHelper::generateMessageSection($errors),
         'WARNINGS_SECTION' => TemplateHelper::generateMessageSection($warnings, 'warning'),
@@ -1045,9 +1048,9 @@ unlink(__FILE__);
                 echo '<strong>安全提示：</strong> 安装文件和资源目录已自动清理。';
                 echo '</div>';
 
-                if (! $jdkInstalled) {
+                if (! $keytoolInstalled) {
                     echo '<div class="requirement warning">';
-                    echo '<strong>JDK提示：</strong> 未检测到JDK。如果需要使用keytool生成JKS格式证书等功能，请确保JDK已正确安装并配置到系统PATH。';
+                    echo '<strong>keytool提示：</strong> 未检测到keytool命令。如果需要使用keytool生成JKS格式证书等功能，请确保JDK或JRE已正确安装并配置到系统PATH。';
                     echo '</div>';
                 }
 
