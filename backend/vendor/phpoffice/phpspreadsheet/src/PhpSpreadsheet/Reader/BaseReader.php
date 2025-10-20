@@ -52,7 +52,13 @@ abstract class BaseReader implements IReader
      * Improper specification of these within a spreadsheet
      * can subject the caller to security exploits.
      */
-    protected bool $allowExternalImages = true;
+    protected bool $allowExternalImages = false;
+
+    /**
+     * Create a blank sheet if none are read,
+     * possibly due to a typo when using LoadSheetsOnly.
+     */
+    protected bool $createBlankSheetIfNoneRead = false;
 
     /**
      * IReadFilter instance.
@@ -171,6 +177,17 @@ abstract class BaseReader implements IReader
         return $this->allowExternalImages;
     }
 
+    /**
+     * Create a blank sheet if none are read,
+     * possibly due to a typo when using LoadSheetsOnly.
+     */
+    public function setCreateBlankSheetIfNoneRead(bool $createBlankSheetIfNoneRead): self
+    {
+        $this->createBlankSheetIfNoneRead = $createBlankSheetIfNoneRead;
+
+        return $this;
+    }
+
     public function getSecurityScanner(): ?XmlScanner
     {
         return $this->securityScanner;
@@ -204,6 +221,9 @@ abstract class BaseReader implements IReader
         }
         if (((bool) ($flags & self::DONT_ALLOW_EXTERNAL_IMAGES)) === true) {
             $this->setAllowExternalImages(false);
+        }
+        if (((bool) ($flags & self::CREATE_BLANK_SHEET_IF_NONE_READ)) === true) {
+            $this->setCreateBlankSheetIfNoneRead(true);
         }
     }
 

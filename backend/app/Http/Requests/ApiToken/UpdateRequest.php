@@ -12,6 +12,7 @@ class UpdateRequest extends BaseRequest
 
         return [
             'user_id' => 'required|integer|exists:users,id|unique:api_tokens,user_id,'.$apiTokenId,
+            'token' => 'nullable|string|alpha_num|max:128',
             'allowed_ips' => 'nullable|array',
             'rate_limit' => 'nullable|integer',
             'status' => 'nullable|integer',
@@ -32,5 +33,20 @@ class UpdateRequest extends BaseRequest
                 }),
             ]);
         }
+    }
+
+    /**
+     * 获取验证后的数据，并移除空的 token 字段
+     */
+    public function validated($key = null, $default = null)
+    {
+        $validated = parent::validated($key, $default);
+
+        // 如果是获取所有验证数据（$key 为 null），且 token 为空，则移除 token 字段
+        if ($key === null && is_array($validated) && array_key_exists('token', $validated) && empty($validated['token'])) {
+            unset($validated['token']);
+        }
+
+        return $validated;
     }
 }

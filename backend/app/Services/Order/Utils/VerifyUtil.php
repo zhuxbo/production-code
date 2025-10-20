@@ -8,25 +8,21 @@ use App\Models\Order;
 use App\Traits\ApiResponseStatic;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Support\Facades\Log;
 
 class VerifyUtil
 {
     use ApiResponseStatic;
-
-    private static ?array $dnsToolsUrls = null;
 
     /**
      * 获取验证工具URLs
      */
     private static function getDnsToolsUrls(): array
     {
-        if (self::$dnsToolsUrls === null) {
-            $urls = get_system_setting('site', 'dnsTools');
-            // 确保返回数组格式
-            self::$dnsToolsUrls = is_array($urls) ? $urls : [];
-        }
+        $urls = get_system_setting('site', 'dnsTools');
 
-        return self::$dnsToolsUrls;
+        // 确保返回数组格式
+        return is_array($urls) ? $urls : [];
     }
 
     /**
@@ -105,14 +101,27 @@ class VerifyUtil
     /**
      * 验证域名验证记录，支持故障转移
      */
-    public static function verifyValidation(array $validation): bool
+    public static function verifyValidation(array $validation): array
     {
+        $urls = self::getDnsToolsUrls();
+
+        // 检查是否有可用的 DNS Tools URLs
+        if (empty($urls)) {
+            Log::error('DNS Tools URLs 未配置');
+
+            return [
+                'code' => 0,
+                'msg' => 'DNS Tools URLs 未配置，无法进行域名验证',
+            ];
+        }
+
         $client = new Client([
             'timeout' => 3.0, // 设置超时时间为3秒
             'verify' => false, // 关闭SSL证书验证
         ]);
 
-        foreach (self::getDnsToolsUrls() as $url) {
+        $lastError = '';
+        foreach ($urls as $url) {
             try {
                 // 发送json数据
                 $response = $client->post($url.'/api/dcv/verify', [
@@ -121,12 +130,32 @@ class VerifyUtil
 
                 $result = json_decode($response->getBody()->getContents(), true);
 
-                return boolval($result['code'] ?? false);
-            } catch (GuzzleException) {
+                if ($result === null) {
+                    Log::error('DNS Tools API 返回无效 JSON', ['url' => $url]);
+                    $lastError = 'API 返回无效数据';
+
+                    continue;
+                }
+
+                return [
+                    'code' => $result['code'] ?? 0,
+                    'msg' => $result['msg'] ?? '',
+                    'errors' => $result['errors'] ?? [],
+                ];
+            } catch (GuzzleException $e) {
+                $lastError = $e->getMessage();
+                Log::error('DNS Tools API 请求失败', [
+                    'url' => $url,
+                    'error' => $e->getMessage(),
+                ]);
+
                 continue; // 尝试下一个API
             }
         }
 
-        return false;
+        return [
+            'code' => 0,
+            'msg' => 'DNS Tools API 请求失败: '.$lastError,
+        ];
     }
 }

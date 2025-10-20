@@ -37,7 +37,7 @@ class SettingController extends BaseController
         $groups = SettingGroup::with(['settings' => function ($query) {
             $query->orderBy('weight', 'asc')->orderBy('id', 'asc');
         }])
-            ->orderBy('weight', 'asc')
+            ->orderBy('weight')
             ->orderBy('id')
             ->get();
 
@@ -201,6 +201,15 @@ class SettingController extends BaseController
         }
 
         Setting::destroy($ids);
+        $this->success();
+    }
+
+    /**
+     * 清除所有设置缓存
+     */
+    public function clearCache(): void
+    {
+        Setting::clearAllCache();
         $this->success();
     }
 }

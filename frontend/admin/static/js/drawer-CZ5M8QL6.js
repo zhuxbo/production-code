@@ -1,1 +1,0 @@
-import{r as o,o as t,av as s}from"./index-C2TQaEJO.js";function d(){const e=o(520),n=()=>{const r=window.innerWidth;r>2080?e.value="25%":r>=520?e.value=520:e.value="90%"},i=()=>{n()};return t(()=>{n(),window.addEventListener("resize",i)}),s(()=>{window.removeEventListener("resize",i)}),{drawerSize:e}}export{d as u};

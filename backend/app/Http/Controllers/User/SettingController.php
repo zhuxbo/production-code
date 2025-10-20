@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\User;
 
-use App\Http\Requests\ApiToken\StoreRequest as ApiTokenUpdateRequest;
+use App\Http\Requests\ApiToken\UpdateRequest as ApiTokenUpdateRequest;
 use App\Http\Requests\Callback\StoreRequest as CallbackUpdateRequest;
 use App\Models\ApiToken;
 use App\Models\Callback;
@@ -31,6 +31,9 @@ class SettingController extends BaseController
         $apiToken = ApiToken::where('user_id', $this->guard->id())->first();
         // 如果apiToken不存在，则创建
         if (! $apiToken) {
+            if (empty($validated['token'])) {
+                $this->error('token 不能为空');
+            }
             $validated['user_id'] = $this->guard->id();
             ApiToken::create($validated);
         } else {

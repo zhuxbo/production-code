@@ -1,7 +1,7 @@
 {
     "version": "1.0",
     "mysql_version": "8.0.43",
-    "generated_at": "2025-09-05 04:22:21",
+    "generated_at": "2025-10-10 17:42:28",
     "database": {
         "name": "tempdb",
         "charset": "utf8mb4",
@@ -547,8 +547,24 @@
                     "extra": "",
                     "comment": "订单状态"
                 },
-                "price": {
+                "product_code": {
                     "position": 12,
+                    "type": "varchar(100)",
+                    "nullable": true,
+                    "default": null,
+                    "extra": "",
+                    "comment": "产品代码"
+                },
+                "period": {
+                    "position": 13,
+                    "type": "smallint unsigned",
+                    "nullable": true,
+                    "default": null,
+                    "extra": "",
+                    "comment": "周期(月)"
+                },
+                "price": {
+                    "position": 14,
                     "type": "decimal(10,2)",
                     "nullable": true,
                     "default": null,
@@ -556,7 +572,7 @@
                     "comment": "价格"
                 },
                 "count": {
-                    "position": 13,
+                    "position": 15,
                     "type": "smallint unsigned",
                     "nullable": false,
                     "default": "1",
@@ -564,7 +580,7 @@
                     "comment": "件数"
                 },
                 "amount": {
-                    "position": 14,
+                    "position": 16,
                     "type": "decimal(10,2)",
                     "nullable": true,
                     "default": null,
@@ -572,7 +588,7 @@
                     "comment": "支付金额"
                 },
                 "recharged": {
-                    "position": 15,
+                    "position": 17,
                     "type": "tinyint(1)",
                     "nullable": false,
                     "default": "0",
@@ -580,7 +596,7 @@
                     "comment": "充值状态:0=未充值,1=已充值"
                 },
                 "created_at": {
-                    "position": 16,
+                    "position": 18,
                     "type": "timestamp",
                     "nullable": true,
                     "default": null,
@@ -588,7 +604,7 @@
                     "comment": ""
                 },
                 "updated_at": {
-                    "position": 17,
+                    "position": 19,
                     "type": "timestamp",
                     "nullable": true,
                     "default": null,
@@ -612,6 +628,16 @@
                     "type": "BTREE",
                     "columns": [
                         "platform"
+                    ],
+                    "sub_parts": [
+                        null
+                    ]
+                },
+                "agisos_product_code_index": {
+                    "unique": false,
+                    "type": "BTREE",
+                    "columns": [
+                        "product_code"
                     ],
                     "sub_parts": [
                         null

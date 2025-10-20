@@ -423,10 +423,27 @@ foreach ($directoriesToCheck as $directory) {
 
 // 检查Composer是否已安装
 $composerInstalled = false;
+$composerVersion = 'N/A';
 
 if ($execEnabled) {
-    exec('composer --version 2>&1', $output, $returnVar);
-    $composerInstalled = $returnVar === 0;
+    exec('composer --version 2>&1', $composerVersionOutput, $composerVersionReturnVar);
+    if ($composerVersionReturnVar === 0) {
+        $composerInstalled = true;
+        // 获取Composer版本信息
+        if (! empty($composerVersionOutput)) {
+            // 解析Composer版本信息，格式如: "Composer version 2.8.1 2024-06-10 22:11:12"
+            preg_match('/Composer version (\d+\.\d+(?:\.\d+)?)/', implode("\n", $composerVersionOutput), $matches);
+            if (isset($matches[1])) {
+                $composerVersion = $matches[1];
+                // 检查版本是否低于2.8
+                if (version_compare($composerVersion, '2.8.0', '<')) {
+                    $warnings[] = "Composer版本 {$composerVersion} 低于推荐版本2.8，建议升级到最新版本以获得更好的性能和稳定性。";
+                }
+            } else {
+                $composerVersion = htmlspecialchars($composerVersionOutput[0]);
+            }
+        }
+    }
 }
 
 if (! $composerInstalled) {
@@ -434,26 +451,38 @@ if (! $composerInstalled) {
     $errors[] = 'Composer未安装或无法执行';
 }
 
-// 检查keytool是否可用
-$keytoolInstalled = false;
-$keytoolVersion = 'N/A';
+// 检查Java是否可用
+$javaInstalled = false;
+$javaVersion = 'N/A';
 
 if ($execEnabled) {
-    exec('keytool -help 2>&1', $keytoolOutput, $keytoolReturnVar);
-    if ($keytoolReturnVar === 0) {
-        $keytoolInstalled = true;
-        // 尝试获取keytool版本信息
-        exec('keytool -version 2>&1', $versionOutput, $versionReturnVar);
-        if ($versionReturnVar === 0 && ! empty($versionOutput)) {
-            $keytoolVersion = htmlspecialchars($versionOutput[0]);
-        } else {
-            $keytoolVersion = '可用';
+    exec('java -version 2>&1', $javaVersionOutput, $javaVersionReturnVar);
+    if ($javaVersionReturnVar === 0) {
+        $javaInstalled = true;
+        // 获取Java版本信息
+        if (! empty($javaVersionOutput)) {
+            // 解析Java版本信息
+            preg_match('/(?:version |openjdk version )"([^"]+)"/', implode("\n", $javaVersionOutput), $matches);
+            if (isset($matches[1])) {
+                $javaVersion = $matches[1];
+                // 检查版本是否低于17
+                // 提取主版本号进行比较
+                preg_match('/^(\d+)/', $javaVersion, $majorVersionMatches);
+                if (isset($majorVersionMatches[1])) {
+                    $majorVersion = (int)$majorVersionMatches[1];
+                    if ($majorVersion < 17) {
+                        $warnings[] = "Java版本 {$javaVersion} 低于推荐版本17，建议升级到Java 17或更高版本以获得更好的性能和安全性。";
+                    }
+                }
+            } else {
+                $javaVersion = htmlspecialchars($javaVersionOutput[0]);
+            }
         }
     }
 }
 
-if (! $keytoolInstalled) {
-    $warnings[] = '未检测到keytool命令。如果需要使用keytool生成JKS格式证书等功能，请确保JDK或JRE已正确安装并配置到系统PATH。';
+if (! $javaInstalled) {
+    $warnings[] = '未检测到Java命令。如果需要使用keytool生成JKS格式证书等功能，请确保JDK或JRE已正确安装并配置到系统PATH。';
 }
 
 // ===========================================
@@ -691,10 +720,10 @@ if ($formStage == 'env') {
         ),
 
         'COMPOSER_STATUS' => $composerInstalled ? 'success' : 'error',
-        'COMPOSER_VALUE' => $composerInstalled ? '已安装' : '未安装或无法执行',
+        'COMPOSER_VALUE' => $composerInstalled ? ('已安装 (版本: '.$composerVersion.')') : '未安装或无法执行',
 
-        'JDK_STATUS' => $keytoolInstalled ? 'success' : 'warning',
-        'JDK_VALUE' => $keytoolInstalled ? ('keytool可用 (版本: '.$keytoolVersion.')') : 'keytool不可用',
+        'JAVA_STATUS' => $javaInstalled ? 'success' : 'warning',
+        'JAVA_VALUE' => $javaInstalled ? ('已安装 (版本: '.$javaVersion.')') : 'Java不可用',
 
         'ERRORS_SECTION' => TemplateHelper::generateMessageSection($errors),
         'WARNINGS_SECTION' => TemplateHelper::generateMessageSection($warnings, 'warning'),
@@ -1048,9 +1077,9 @@ unlink(__FILE__);
                 echo '<strong>安全提示：</strong> 安装文件和资源目录已自动清理。';
                 echo '</div>';
 
-                if (! $keytoolInstalled) {
+                if (! $javaInstalled) {
                     echo '<div class="requirement warning">';
-                    echo '<strong>keytool提示：</strong> 未检测到keytool命令。如果需要使用keytool生成JKS格式证书等功能，请确保JDK或JRE已正确安装并配置到系统PATH。';
+                    echo '<strong>Java提示：</strong> 未检测到Java命令。如果需要使用keytool生成JKS格式证书等功能，请确保JDK或JRE已正确安装并配置到系统PATH。';
                     echo '</div>';
                 }
 

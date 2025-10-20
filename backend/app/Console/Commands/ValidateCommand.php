@@ -49,7 +49,10 @@ class ValidateCommand extends Command
             })
             ->get();
 
-        $this->info(get_system_setting('site', 'name', 'SSL证书管理系统').' Validate Command Start');
+        $siteName = get_system_setting('site', 'name', 'SSL证书管理系统');
+        $this->info("[$siteName] 证书验证命令开始执行");
+        $this->info("待验证订单数量: {$orders->count()}");
+
         foreach ($orders as $order) {
             try {
                 // 查找或创建域名验证记录
@@ -60,7 +63,7 @@ class ValidateCommand extends Command
                     $record = new DomainValidationRecord([
                         'order_id' => $order->id,
                         'last_check_at' => now(),
-                        'next_check_at' => now()->addMinutes(1), // 首次验证在1分钟后
+                        'next_check_at' => now()->addMinutes(), // 首次验证在1分钟后
                     ]);
                     $record->save();
                 }
@@ -78,32 +81,35 @@ class ValidateCommand extends Command
 
                             // 执行域名验证（DNS/HTTP/HTTPS验证）
                             $verified = VerifyUtil::verifyValidation($order->latestCert->validation);
-                            $this->info("Order $order->id verification result: ".($verified ? 'success' : 'failure'));
 
-                            if ($verified) {
+                            if ($verified['code'] == 1) {
                                 // 验证成功：创建重新验证任务
                                 $action = new Action($order->user_id);
                                 $action->createTask($order->id, 'revalidate');
-                                $this->info("Order $order->id validation task created");
+                                $this->info("订单 #$order->id: 验证成功，已创建提交CA验证的任务");
+                            } else {
+                                // 验证失败
+                                $errorMsg = $verified['msg'] ?: '验证失败';
+                                $this->warn("订单 #$order->id: $errorMsg");
                             }
-                            // 验证失败：什么都不做
                         } else {
                             // 其他状态：直接创建同步任务（如approving状态等待CA处理）
                             $action = new Action($order->user_id);
                             $action->createTask($order->id, 'sync');
-                            $this->info("Order $order->id sync task created");
+                            $this->info("订单 #$order->id: 已创建同步任务");
                         }
 
                         // 无论验证成功失败，都基于创建时间设置下次检测时间
                         $this->setNextCheckAt($record);
                     }
 
-                    $this->info("Order $order->id next check at: ".$record->next_check_at->format('Y-m-d H:i:s'));
+                    $nextCheckTime = $record->next_check_at->format('Y-m-d H:i:s');
+                    $this->info("订单 #$order->id: 下次检测时间 $nextCheckTime");
                 } else {
-                    $this->info("Order $order->id validation timeout (>48h), stopped checking");
+                    $this->warn("订单 #$order->id: 验证超时（超过48小时），停止检测");
                 }
             } catch (Throwable $e) {
-                $this->error("Order $order->id verification error: ".$e->getMessage());
+                $this->error("订单 #$order->id: 验证异常 - {$e->getMessage()}");
             }
         }
     }
@@ -132,8 +138,8 @@ class ValidateCommand extends Command
 
             $record->save();
 
-            $interval_minutes = $next_time_node - $elapsed_minutes;
-            $this->info("Order $record->order_id next check in $interval_minutes minutes (at time node: $next_time_node minutes from creation)");
+            $interval_minutes = intval($next_time_node - $elapsed_minutes);
+            $this->info("订单 #$record->order_id: 将在 $interval_minutes 分钟后再次检测（距创建 $next_time_node 分钟）");
         }
     }
 

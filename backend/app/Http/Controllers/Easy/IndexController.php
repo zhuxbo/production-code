@@ -292,6 +292,9 @@ class IndexController extends Controller
         try {
             $orderGiftAmount = bcsub((string) $order->price, (string) $order->amount, 2);
 
+            $remark = "订单金额$order->amount";
+            $remark .= bccomp($orderGiftAmount, '0.00', 2) === 0 ? '' : "(赠送金额$orderGiftAmount)";
+
             // 订单充值
             Fund::create([
                 'user_id' => $userId,
@@ -300,7 +303,7 @@ class IndexController extends Controller
                 'pay_method' => Agiso::getPlatform($order->platform),
                 'pay_sn' => $order->tid,
                 'status' => 1,
-                'remark' => "订单金额$order->amount(赠送金额$orderGiftAmount)",
+                'remark' => $remark,
             ]);
 
             // 提交证书申请
@@ -392,22 +395,14 @@ class IndexController extends Controller
             return [];
         }
 
-        // 从系统配置获取easy产品映射
-        $easyProductConfig = get_system_setting('site', 'easyProduct');
-        if (empty($easyProductConfig) || ! is_array($easyProductConfig)) {
-            // 如果没有配置，返回空数组
+        // 检查 product_code 是否存在
+        if (empty($order->product_code)) {
             return [];
         }
 
-        // 根据订单价格查找对应的产品ID
-        $productId = $easyProductConfig[$order->price] ?? null;
-        if (! $productId) {
-            return [];
-        }
-
-        // 查询产品信息
-        $product = Product::find($productId);
-        if (! $product) {
+        // 根据 product_code 查询产品
+        $product = Product::where('code', $order->product_code)->first();
+        if (! $product || $product->validation_type !== 'dv') {
             return [];
         }
 
@@ -416,29 +411,10 @@ class IndexController extends Controller
             'name' => $product->name,
             'ca' => $product->brand,
             'id' => $product->id,
-            'period' => $this->determinePeriod($product->periods),
+            'period' => $order->period ?? 1,
             'is_wildcard' => $this->isWildcardSupported($product->common_name_types),
             'validation_methods' => $this->parseValidationMethods($product->validation_methods),
         ];
-    }
-
-    /**
-     * 确定产品周期
-     * periods 如果包含12则period为12，否则为3
-     */
-    protected function determinePeriod(?array $periods): int
-    {
-        if (empty($periods) || ! is_array($periods)) {
-            return 3;
-        }
-
-        // 如果包含12，返回12
-        if (in_array(12, $periods)) {
-            return 12;
-        }
-
-        // 否则返回3
-        return 3;
     }
 
     /**
@@ -536,7 +512,7 @@ class IndexController extends Controller
             }
         }
 
-        if ($user->level_code === 'standard') {
+        if ($user->level_code === 'standard' || $user->level_code === 'gold') {
             $user->update(['level_code' => 'platinum']);
         }
 

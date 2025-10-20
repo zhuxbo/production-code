@@ -6,6 +6,8 @@ namespace App\Http\Controllers\Callback;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agiso;
+use App\Models\Product;
+use App\Models\ProductPrice;
 
 class AgisoController extends Controller
 {
@@ -86,76 +88,147 @@ class AgisoController extends Controller
 
     private function processPinduoduoOrder(array $params): void
     {
-        $price = '0.00';
+        $totalPrice = '0.00';
         $count = 0;
+        $firstProductCode = null;
+        $firstPeriod = null;
+        $isMixed = false; // 标记是否为混合商品订单
 
         foreach (($params['data']['ItemList'] ?? []) as $item) {
-            $goods_price = bcadd((string) $item['goods_price'], '0.00', 2);
-            $goods_price = $this->getGiftPrice($goods_price);
+            $itemCount = (int) $item['goods_count'];
+            $count += $itemCount;
 
-            $goods_price = bcmul($goods_price, (string) $item['goods_count'], 2);
-
-            $price = bcadd($goods_price, $price, 2);
-            $count += (int) $item['goods_count'];
+            // 提取 outer_id 并解析 product_code 和 period
+            if (! empty($item['outer_id'])) {
+                $result = $this->processItemSku($item['outer_id'], $itemCount);
+                if ($result) {
+                    // 检查是否为混合商品
+                    if (! $firstProductCode) {
+                        $firstProductCode = $result['productCode'];
+                        $firstPeriod = $result['period'];
+                    } elseif ($firstProductCode !== $result['productCode'] || $firstPeriod !== $result['period']) {
+                        $isMixed = true;
+                    }
+                    
+                    $totalPrice = bcadd($totalPrice, $result['itemTotal'], 2);
+                }
+            }
         }
 
-        $price !== '0.00'
-        && Agiso::create([
-            'platform' => $params['fromPlatform'] ?? $params['data']['Platform'] ?? null,
-            'sign' => $params['sign'],
-            'timestamp' => $params['timestamp'],
-            'type' => $params['aopic'],
-            'data' => $params['json'],
-            'tid' => $params['data']['Tid'],
-            'price' => $price,
-            'count' => $count,
-            'amount' => $params['data']['PayAmount'] ?? null,
-        ]);
+        if ($totalPrice !== '0.00') {
+            Agiso::create([
+                'platform' => $params['fromPlatform'] ?? $params['data']['Platform'] ?? null,
+                'sign' => $params['sign'],
+                'timestamp' => $params['timestamp'],
+                'type' => $params['aopic'],
+                'data' => $params['json'],
+                'tid' => (string) $params['data']['Tid'],
+                'product_code' => $isMixed ? null : $firstProductCode,
+                'period' => $isMixed ? null : $firstPeriod,
+                'price' => $totalPrice,
+                'count' => $count,
+                'amount' => (string) $params['data']['PayAmount'] ?? '0.00',
+            ]);
+        }
 
         $this->success();
     }
 
     private function processTaobaoOrder(array $params): void
     {
-        $price = '0.00';
         $amount = '0.00';
+        $totalPrice = '0.00';
         $count = 0;
+        $firstProductCode = null;
+        $firstPeriod = null;
+        $isMixed = false; // 标记是否为混合商品订单
 
         foreach (($params['data']['Orders'] ?? []) as $order) {
             $amount = bcadd($amount, (string) $order['Payment'], 2);
+            $itemCount = (int) $order['Num'];
+            $count += $itemCount;
 
-            // 商品单价 如果有赠送金额则替换
-            $goods_price = bcadd((string) $order['Price'], '0.00', 2);
-            $goods_price = $this->getGiftPrice($goods_price);
-
-            // 商品价格 = 商品单价 * 商品数量
-            $goods_price = bcmul($goods_price, (string) $order['Num'], 2);
-
-            $price = bcadd($goods_price, $price, 2);
-            $count += (int) $order['Num'];
+            // 提取 OuterSkuId 并解析 product_code 和 period
+            if (! empty($order['OuterSkuId'])) {
+                $result = $this->processItemSku($order['OuterSkuId'], $itemCount);
+                if ($result) {
+                    // 检查是否为混合商品
+                    if (! $firstProductCode) {
+                        $firstProductCode = $result['productCode'];
+                        $firstPeriod = $result['period'];
+                    } elseif ($firstProductCode !== $result['productCode'] || $firstPeriod !== $result['period']) {
+                        $isMixed = true;
+                    }
+                    
+                    $totalPrice = bcadd($totalPrice, $result['itemTotal'], 2);
+                }
+            }
         }
 
-        $price !== '0.00'
-        && Agiso::create([
-            'platform' => $params['fromPlatform'] ?? $params['data']['Platform'] ?? null,
-            'sign' => $params['sign'],
-            'timestamp' => $params['timestamp'],
-            'type' => $params['aopic'],
-            'data' => $params['json'],
-            'tid' => $params['data']['Tid'],
-            'status' => $params['data']['Status'] ?? null,
-            'price' => $price,
-            'count' => $count,
-            'amount' => $amount,
-        ]);
+        if ($totalPrice !== '0.00') {
+            Agiso::create([
+                'platform' => $params['fromPlatform'] ?? $params['data']['Platform'] ?? null,
+                'sign' => $params['sign'],
+                'timestamp' => $params['timestamp'],
+                'type' => $params['aopic'],
+                'data' => $params['json'],
+                'tid' => (string) $params['data']['Tid'],
+                'status' => $params['data']['Status'] ?? null,
+                'product_code' => $isMixed ? null : $firstProductCode,
+                'period' => $isMixed ? null : $firstPeriod,
+                'price' => $totalPrice,
+                'count' => $count,
+                'amount' => $amount,
+            ]);
+        }
 
         $this->success();
     }
 
-    private function getGiftPrice(string $price): string
+    /**
+     * 处理商品 SKU，解析 product_code 和 period，计算价格
+     *
+     * @return array{productCode: string, period: int, itemTotal: string}|null
+     */
+    private function processItemSku(string $skuId, int $itemCount): ?array
     {
-        $gift = get_system_setting('site', 'agisoGift', []);
+        $parts = explode('#', $skuId);
+        if (count($parts) !== 2) {
+            return null;
+        }
 
-        return (string) ($gift[$price] ?? $price);
+        $productCode = $parts[0];
+        $period = (int) $parts[1] ?? 1;
+
+        // 查询单价并计算该商品的总价
+        $itemTotal = '0.00';
+        $unitPrice = $this->getProductPrice($productCode, $period);
+        if ($unitPrice) {
+            $itemTotal = bcmul($unitPrice, (string) $itemCount, 2);
+        }
+
+        return [
+            'productCode' => $productCode,
+            'period' => $period,
+            'itemTotal' => $itemTotal,
+        ];
+    }
+
+    /**
+     * 根据 product_code 和 period 查询 platinum 级别的价格
+     */
+    private function getProductPrice(string $productCode, int $period): ?string
+    {
+        $product = Product::where('code', $productCode)->first();
+        if (! $product) {
+            return null;
+        }
+
+        $productPrice = ProductPrice::where('product_id', $product->id)
+            ->where('level_code', 'platinum')
+            ->where('period', $period)
+            ->first();
+
+        return $productPrice ? (string) $productPrice->price : null;
     }
 }

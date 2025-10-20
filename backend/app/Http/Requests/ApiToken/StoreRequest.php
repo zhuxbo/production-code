@@ -10,7 +10,7 @@ class StoreRequest extends BaseRequest
     {
         return [
             'user_id' => 'required|integer|exists:users,id|unique:api_tokens',
-            'token' => 'nullable|string|alpha_num|max:128',
+            'token' => 'required|string|alpha_num|max:128',
             'allowed_ips' => 'nullable|array',
             'rate_limit' => 'nullable|integer',
             'status' => 'nullable|integer',

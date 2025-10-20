@@ -1,0 +1,1 @@
+import{l as t,v as s,aq as a}from"./index-BbKmpnH2.js";function l(){const e=t(600),n=()=>{const o=window.innerWidth;o>2e3?e.value="30%":o>=600?e.value=600:e.value="90%"},i=()=>{n()};return s(()=>{n(),window.addEventListener("resize",i)}),a(()=>{window.removeEventListener("resize",i)}),{dialogSize:e}}export{l as u};

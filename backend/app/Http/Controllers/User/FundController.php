@@ -191,25 +191,34 @@ class FundController extends BaseController
             // 计算赠送金额
             $giftAmount = bcsub((string) $agisoOrder->price, (string) $agisoOrder->amount, 2);
 
-
             /** @var User $user */
             $user = $this->guard->user();
 
-            // 如果用户级别是 standard 变更为 platinum
-            if ($user->level_code === 'standard') {
+            // 如果用户级别是 standard 或 gold 变更为 platinum
+            if ($user->level_code === 'standard' || $user->level_code === 'gold') {
                 $user->level_code = 'platinum';
                 $user->save();
+            }
+
+            // 如果用户级别是 platinum 赠送金额，否则不赠送
+            if ($user->level_code === 'platinum') {
+                $amount = $agisoOrder->price;
+                $remark = "订单金额$agisoOrder->amount";
+                $remark .= bccomp($giftAmount, '0.00', 2) === 0 ? '' : "(赠送金额$giftAmount)";
+            } else {
+                $amount = $agisoOrder->amount;
+                $remark = "订单金额$agisoOrder->amount";
             }
 
             // 创建充值记录
             Fund::create([
                 'user_id' => $user->id,
-                'amount' => $agisoOrder->price,
+                'amount' => $amount,
                 'type' => 'addfunds',
                 'pay_method' => $payMethod,
                 'pay_sn' => $agisoOrder->tid,
                 'status' => 1, // 直接设为成功状态
-                'remark' => "订单金额$agisoOrder->amount(赠送金额$giftAmount)",
+                'remark' => $remark,
                 'ip' => request()->ip(),
             ]);
 

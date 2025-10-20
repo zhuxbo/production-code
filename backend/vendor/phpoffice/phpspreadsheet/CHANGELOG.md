@@ -3,7 +3,24 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com)
-and this project adheres to [Semantic Versioning](https://semver.org).
+and this project adheres to [Semantic Versioning](https://semver.org). This is always true of the master branch. Some earlier branches, including the branch from which you are reading this file, remain supported and security fixes are applied to them; if the security fix represents a breaking change, it may have to be applied as a minor or patch version.
+
+## 2025-09-03 - 3.10.1
+
+### Added
+
+- Option for Readers to create a new blank sheet if none match LoadSheetsOnly list. [PR #4623](https://github.com/PHPOffice/PhpSpreadsheet/pull/4623) Backport of [PR #4618](https://github.com/PHPOffice/PhpSpreadsheet/pull/4618).
+- Remove `imagedestroy` from MemoryDrawing. Backport of [PR #4625](https://github.com/PHPOffice/PhpSpreadsheet/pull/4625).
+
+### Fixed
+
+ - Compatibility changes for Php 8.5. [Issue #4600](https://github.com/PHPOffice/PhpSpreadsheet/issues/4600) [PR #4613](https://github.com/PHPOffice/PhpSpreadsheet/pull/4613) [PR #4595](https://github.com/PHPOffice/PhpSpreadsheet/pull/4595) [PR #4589](https://github.com/PHPOffice/PhpSpreadsheet/pull/4589)
+
+## 2025-08-10 - 3.10.0
+
+### Breaking Changes
+
+- Images will be loaded from an external source (e.g. http://example.com/img.png) only if the reader is explicitly set to allow it via `$reader->setAllowExternalImages(true)`. We do not believe that loading of external images is a widely used feature. This is a necessary change for security purposes. It unfortunately breaks Semantic Versioning for reasons described above; there is no way to start a new major version for this branch.
 
 # 2025-07-23 - 3.9.3
 

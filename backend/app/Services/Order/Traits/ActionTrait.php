@@ -277,72 +277,46 @@ trait ActionTrait
      */
     protected function generateDcv(string $ca, string $method, string $csr, string $unique_value): array
     {
-        $dnsType = in_array(strtoupper($method), ['TXT', 'CNAME']) ? strtoupper($method) : '';
+        $method = strtolower($method);
 
-        if (strtolower($ca) === 'sectigo') {
-            $dcv = $this->generateSectigoDcv($method, $dnsType, $csr, $unique_value);
-        } elseif (strtolower($ca) === 'certum') {
-            $dcv = $this->generateCertumDcv($method, $dnsType);
+        if (strtolower($ca) === 'sectigo' && in_array($method, ['cname', 'http', 'https'])) {
+            $dcv = $this->generateSectigoDcv($method, $csr, $unique_value);
         } else {
-            $dcv = $this->generateDefaultDcv($method, $dnsType);
+            $dcv = ['method' => $method];
         }
 
         return $dcv;
     }
 
     /**
-     * 生成默认 DCV
+     * 生成 Sectigo DCV
      */
-    protected function generateDefaultDcv(string $method, string $dnsType): array
-    {
-        $dcv['method'] = $method;
-        $dcv['dns']['host'] = '_dnsauth';
-        $dcv['dns']['type'] = $dnsType;
-        $dcv['dns']['value'] = '';
-        $dcv['file']['name'] = 'fileauth.txt';
-        $dcv['file']['path'] = '/.well-known/pki-validation/fileauth.txt';
-        $dcv['file']['content'] = '';
-
-        return $dcv;
-    }
-
-    /**
-     * 生成 Certum DCV
-     */
-    protected function generateCertumDcv(string $method, string $dnsType): array
-    {
-        $dcv['method'] = $method;
-        $dcv['dns']['host'] = '_certum';
-        $dcv['dns']['type'] = $dnsType;
-        $dcv['dns']['value'] = '';
-        $dcv['file']['name'] = 'certum.txt';
-        $dcv['file']['path'] = '/.well-known/pki-validation/certum.txt';
-        $dcv['file']['content'] = '';
-
-        return $dcv;
-    }
-
-    /**
-     * 生成 DCV
-     */
-    protected function generateSectigoDcv(string $method, string $dnsType, string $csr, string $unique_value): array
+    protected function generateSectigoDcv(string $method, string $csr, string $unique_value): array
     {
         $random = sprintf('%04x%04x', mt_rand(0, 0xFFFF), mt_rand(0, 0xFFFF));
-        $tempDir = storage_path($random);
+        $tempDir = storage_path('temp-certs/'.$random);
         mkdir($tempDir, 0755, true);
         chdir($tempDir); // 改变当前目录
 
-        $csrPemFile = $tempDir.'csr.pem';
+        $csrPemFile = $tempDir.'/csr.pem';
         file_put_contents($csrPemFile, $csr);
 
-        $csrDerFile = $tempDir.'csr.der';
+        $csrDerFile = $tempDir.'/csr.der';
 
         // 构建 OpenSSL 命令行命令
         $cmd = "openssl req -in $csrPemFile -outform der -out $csrDerFile";
         @exec($cmd.' > /dev/null 2>&1');
 
-        $der = file_get_contents($csrDerFile);
-        @exec('rm -rf '.$tempDir);
+        $der = file_exists($csrDerFile) ? file_get_contents($csrDerFile) : null;
+
+        // 使用 PHP 原生方法清理，更可靠
+        if (file_exists($csrPemFile)) {
+            @unlink($csrPemFile);
+        }
+        if (file_exists($csrDerFile)) {
+            @unlink($csrDerFile);
+        }
+        @rmdir($tempDir);
 
         if ($der) {
             $md5 = md5($der);
@@ -352,14 +326,14 @@ trait ActionTrait
 
             $dcv['method'] = $method;
             $dcv['dns']['host'] = '_'.strtolower($md5);
-            $dcv['dns']['type'] = $dnsType;
+            $dcv['dns']['type'] = 'CNAME';
             $dcv['dns']['value'] = strtolower($cnameValue1.'.'.$cnameValue2.'.'.$unique_value.'.sectigo.com');
             $dcv['file']['name'] = strtoupper($md5).'.txt';
             $dcv['file']['path'] = '/.well-known/pki-validation/'.$dcv['file']['name'];
             $dcv['file']['content'] = strtoupper($sha256).PHP_EOL.'sectigo.com'.PHP_EOL.strtolower($unique_value);
         }
 
-        return $dcv ?? $this->generateDefaultDcv($method, $dnsType);
+        return $dcv ?? ['method' => $method];
     }
 
     /**
@@ -367,7 +341,7 @@ trait ActionTrait
      */
     protected function generateValidation(array $dcv, string $domains): ?array
     {
-        $method = $dcv['method'];
+        $method = strtolower($dcv['method']);
         $domains = explode(',', trim($domains, ','));
 
         foreach ($domains as $k => $domain) {
@@ -377,15 +351,19 @@ trait ActionTrait
 
             $validation[$k] = ['domain' => $domain, 'method' => $method];
 
-            if ($method == 'cname' || $method == 'txt') {
+            if (($method == 'cname' || $method == 'txt') && isset($dcv['dns']['value'])) {
                 $validation[$k]['host'] = $dcv['dns']['host'];
                 $validation[$k]['value'] = $dcv['dns']['value'];
-            } elseif ($method == 'http' || $method == 'https' || $method == 'file') {
+            }
+
+            if (($method == 'http' || $method == 'https' || $method == 'file') && isset($dcv['file']['content'])) {
                 $validation[$k]['name'] = $dcv['file']['name'];
                 $validation[$k]['content'] = $dcv['file']['content'];
                 $protocol = $method == 'file' ? '//' : $method.'://';
                 $validation[$k]['link'] = $protocol.$domain.$dcv['file']['path'];
-            } else {
+            }
+
+            if (in_array($method, ['admin', 'administrator', 'webmaster', 'hostmaster', 'postmaster'])) {
                 $validation[$k]['email'] = $method.'@'.DomainUtil::getRootDomain($domain);
             }
         }

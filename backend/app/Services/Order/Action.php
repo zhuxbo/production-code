@@ -123,7 +123,7 @@ class Action
     public function new(array $params): void
     {
         $later = $this->checkDuplicate('new', [$params, $this->userId], 10);
-        $later && $this->error('参数重复，请在 ' . $later . ' 秒后再提交申请');
+        $later && $this->error('参数重复，请在 '.$later.' 秒后再提交申请');
 
         $params = $this->initParams($params);
 
@@ -141,15 +141,13 @@ class Action
 
             ($latestCert['action'] == 'renew') && Cert::where(['status' => 'active', 'order_id' => $params['order_id']])->update(['status' => 'renewed']);
 
-            $orderId = $order->id;
-
             DB::commit();
         } catch (Throwable $e) {
             DB::rollback();
             throw $e;
         }
 
-        $this->success(['order_id' => $orderId]);
+        $this->success(['order_id' => $order->id]);
     }
 
     /**
@@ -160,7 +158,7 @@ class Action
     public function batchNew(array $params): void
     {
         $later = $this->checkDuplicate('batchNew', [$params, $this->userId], 10);
-        $later && $this->error('参数重复，请在 ' . $later . ' 秒后再提交批量申请');
+        $later && $this->error('参数重复，请在 '.$later.' 秒后再提交批量申请');
 
         $domains = explode(',', $params['domains'] ?? '');
 
@@ -202,7 +200,7 @@ class Action
     public function renew(array $params): void
     {
         $later = $this->checkDuplicate('renew', [$params, $this->userId], 10);
-        $later && $this->error('参数重复，请在 ' . $later . ' 秒后再提交续费');
+        $later && $this->error('参数重复，请在 '.$later.' 秒后再提交续费');
 
         $this->new($params);
     }
@@ -215,7 +213,7 @@ class Action
     public function reissue(array $params): void
     {
         $later = $this->checkDuplicate('reissue', [$params, $this->userId], 10);
-        $later && $this->error('参数重复，请在 ' . $later . ' 秒后再提交重签');
+        $later && $this->error('参数重复，请在 '.$later.' 秒后再提交重签');
 
         $params = $this->initParams($params);
 
@@ -443,7 +441,7 @@ class Action
                 // 防止循环：检查重试次数
                 if ($this->shouldRetryOperation($orderId, 'sync', 'intermediate_cert_missing')) {
                     $this->createTask($orderId, 'sync', $later);
-                    $this->error('中级证书获取失败，请' . $later . '秒后重试');
+                    $this->error('中级证书获取失败，请'.$later.'秒后重试');
                 } else {
                     $this->error('中级证书获取失败次数过多，请手动处理或联系技术支持');
                 }
@@ -458,13 +456,16 @@ class Action
             $order->period_till = max($data['expires_at'], $periodTill);
         }
 
+        // 状态是否变化
+        $hasStatusChanged = isset($data['status']) && $data['status'] !== $cert->status;
+
         // 证书签发后发送通知邮件
-        if (in_array($cert->status, ['processing', 'approving']) && ($data['status'] ?? '') === 'active') {
+        if ($hasStatusChanged && $data['status'] === 'active') {
             $user->email && $this->createTask($orderId, 'sendActive');
         }
 
-        // 用户api回调
-        if (in_array($data['status'] ?? '', ['active', 'cancelled', 'revoked']) && ($data['status'] ?? '') !== $cert->status) {
+        // 签发 取消 吊销 发起回调
+        if ($hasStatusChanged && in_array($data['status'] ?? '', ['active', 'cancelled', 'revoked'])) {
             $callback = Callback::where('user_id', $order->user_id)->where('status', 1)->first();
             $callback && $this->createTask($orderId, 'callback');
             // 删除相关任务
@@ -570,7 +571,7 @@ class Action
     public function revalidate(int $orderId): void
     {
         $later = $this->checkDuplicate('revalidate', [$orderId, $this->userId]);
-        $later && $this->error('请在 ' . $later . ' 秒后再提交验证');
+        $later && $this->error('请在 '.$later.' 秒后再提交验证');
 
         $order = FindUtil::Order($orderId);
         $cert = $order->latestCert;
@@ -589,7 +590,7 @@ class Action
     public function updateDCV(int $orderId, string $method): void
     {
         $later = $this->checkDuplicate('updateDCV', [$orderId, $this->userId]);
-        $later && $this->error('请在 ' . $later . ' 秒后再提交修改');
+        $later && $this->error('请在 '.$later.' 秒后再提交修改');
 
         $order = FindUtil::Order($orderId);
         $cert = $order->latestCert;
@@ -601,21 +602,19 @@ class Action
             $dcvType = strtolower($method);
             if (in_array($dcvType, ['txt', 'cname'])) {
                 $cert->dcv = merge_multi_dimensional_arrays($cert->dcv, ['method' => $method, 'dns' => ['type' => $dcvType]]);
-            } elseif (in_array($dcvType, ['file', 'http', 'https'])) {
-                $cert->dcv = merge_multi_dimensional_arrays($cert->dcv, ['method' => $method, 'file' => ['type' => $dcvType]]);
             } else {
                 $cert->dcv = merge_multi_dimensional_arrays($cert->dcv, ['method' => $method]);
             }
             $cert->validation = $this->generateValidation($cert->dcv, $cert->alternative_names);
-            $cert->save();
         } elseif ($cert->status === 'processing') {
             $result = $this->api->updateDCV($orderId, $method);
             $cert->dcv = $result['data']['dcv'] ?? $cert->dcv;
             $cert->validation = $result['data']['validation'] ?? $cert->validation;
-            $cert->save();
         } else {
             $this->error('证书状态已改变，请刷新页面查看');
         }
+
+        $cert->save();
 
         $this->success([
             'dcv' => $result['data']['dcv'] ?? $cert->dcv,
@@ -629,7 +628,7 @@ class Action
     public function removeMdcDomain(int $orderId): void
     {
         $later = $this->checkDuplicate('removeMdcDomain', [$orderId, $this->userId], 120);
-        $later && $this->error('请在 ' . $later . ' 秒后再提交删除');
+        $later && $this->error('请在 '.$later.' 秒后再提交删除');
 
         $order = FindUtil::Order($orderId);
         $cert = $order->latestCert;
@@ -714,7 +713,7 @@ class Action
             $product = FindUtil::Product($order->product_id);
 
             $order->created_at->timestamp < time() - 86400 * $product->refund_period
-                && $this->error('订单已超过' . $product->refund_period . '天');
+                && $this->error('订单已超过'.$product->refund_period.'天');
 
             $order->latestCert->status === 'cancelled' && $this->error('订单已取消');
             $order->latestCert->status != 'cancelling' && $this->error('订单状态不是取消中');

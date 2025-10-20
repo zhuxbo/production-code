@@ -125,6 +125,19 @@ class CsrUtil
         $info['stateOrProvinceName'] = $organization['state'] ?? 'Shanghai';
         $info['localityName'] = $organization['city'] ?? 'Shanghai';
 
+        // 仅 Certum 品牌 EV 证书
+        if (
+            ! empty($organization)
+            && strtolower($params['product']['brand'] ?? '') == 'certum'
+            && strtolower($params['product']['validation_type'] ?? '') == 'ev'
+        ) {
+            $info['jurisdictionCountryName'] = $organization['country'] ?? 'CN';  // 可选，注册地所在国家，适用于EV证书
+            $info['jurisdictionStateOrProvinceName'] = $organization['state'] ?? 'Shanghai';  // 可选，注册地所在州，适用于EV证书
+            $info['jurisdictionLocalityName'] = $organization['city'] ?? 'Shanghai';  // 可选，注册地所在城市，适用于EV证书
+            $info['businessCategory'] = $organization['category'] ?? 'Private Organization';  // 可选，业务类别
+            $info['serialNumber'] = $organization['registration_number'] ?? '';  // 可选，组织机构代码或工商注册号
+        }
+
         return array_filter($info);
     }
 

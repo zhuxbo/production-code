@@ -4,10 +4,21 @@ namespace App\Models;
 
 use App\Bootstrap\ApiExceptions;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Cache;
 use JsonException;
 
 class Setting extends BaseModel
 {
+    /**
+     * 缓存前缀
+     */
+    private const string CACHE_PREFIX = 'setting:';
+
+    /**
+     * 缓存时间（秒），默认1小时
+     */
+    private const int CACHE_TTL = 3600;
+
     protected $fillable = [
         'group_id',
         'key',
@@ -51,6 +62,15 @@ class Setting extends BaseModel
                 $model->options = null;
             }
         });
+
+        // 数据变更时清除相关缓存
+        static::saved(function ($model) {
+            self::clearGroupCache($model->group_id);
+        });
+
+        static::deleted(function ($model) {
+            self::clearGroupCache($model->group_id);
+        });
     }
 
     /**
@@ -82,15 +102,19 @@ class Setting extends BaseModel
      */
     public static function getByGroupId(int $groupId): array
     {
-        /** @var Setting[] $settings */
-        $settings = self::where('group_id', $groupId)->orderBy('weight')->get();
-        $result = [];
+        $cacheKey = self::CACHE_PREFIX.'group:'.$groupId;
 
-        foreach ($settings as $setting) {
-            $result[$setting->key] = $setting->getTypedValue();
-        }
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($groupId) {
+            /** @var Setting[] $settings */
+            $settings = self::where('group_id', $groupId)->orderBy('weight')->get();
+            $result = [];
 
-        return $result;
+            foreach ($settings as $setting) {
+                $result[$setting->key] = $setting->getTypedValue();
+            }
+
+            return $result;
+        });
     }
 
     /**
@@ -98,12 +122,16 @@ class Setting extends BaseModel
      */
     public static function getByGroupName(string $groupName): array
     {
-        $group = SettingGroup::where('name', $groupName)->first();
-        if (! $group) {
-            return [];
-        }
+        $cacheKey = self::CACHE_PREFIX.'group_name:'.$groupName;
 
-        return self::getByGroupId($group->id);
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($groupName) {
+            $group = SettingGroup::where('name', $groupName)->first();
+            if (! $group) {
+                return [];
+            }
+
+            return self::getByGroupId($group->id);
+        });
     }
 
     /**
@@ -127,20 +155,24 @@ class Setting extends BaseModel
      */
     public static function getValue(string $groupName, ?string $key = null): mixed
     {
-        $group = SettingGroup::where('name', $groupName)->first();
-        if (! $group) {
-            return null;
-        }
-
         if ($key === null) {
-            return self::getByGroupId($group->id);
+            return self::getByGroupName($groupName);
         }
 
-        $setting = self::where('group_id', $group->id)
-            ->where('key', $key)
-            ->first();
+        $cacheKey = self::CACHE_PREFIX.'value:'.$groupName.':'.$key;
 
-        return $setting?->value;
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($groupName, $key) {
+            $group = SettingGroup::where('name', $groupName)->first();
+            if (! $group) {
+                return null;
+            }
+
+            $setting = self::where('group_id', $group->id)
+                ->where('key', $key)
+                ->first();
+
+            return $setting?->value;
+        });
     }
 
     /**
@@ -238,5 +270,42 @@ class Setting extends BaseModel
     public function group(): BelongsTo
     {
         return $this->belongsTo(SettingGroup::class, 'group_id');
+    }
+
+    /**
+     * 清除指定组的缓存
+     */
+    public static function clearGroupCache(int $groupId): void
+    {
+        // 清除按组ID查询的缓存
+        Cache::forget(self::CACHE_PREFIX.'group:'.$groupId);
+
+        // 清除按组名查询的缓存（需要查询组名）
+        $group = SettingGroup::find($groupId);
+        if ($group) {
+            Cache::forget(self::CACHE_PREFIX.'group_name:'.$group->name);
+
+            // 清除该组下所有配置项的单个值缓存
+            $settings = self::where('group_id', $groupId)->get(['key']);
+            foreach ($settings as $setting) {
+                Cache::forget(self::CACHE_PREFIX.'value:'.$group->name.':'.$setting->key);
+            }
+        }
+    }
+
+    /**
+     * 清除所有 Setting 缓存
+     */
+    public static function clearAllCache(): void
+    {
+        // 获取所有缓存键并删除
+        $groups = SettingGroup::all();
+        foreach ($groups as $group) {
+            self::clearGroupCache($group->id);
+        }
+
+        // 或者使用通配符删除（如果缓存驱动支持）
+        // Redis 支持，但 file/database 驱动不支持
+        // Cache::flush(); // 这会清除所有缓存，不推荐
     }
 }

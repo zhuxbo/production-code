@@ -29,6 +29,7 @@ class AgisoController extends BaseController
             $query->where(function ($q) use ($validated) {
                 $q->where('tid', 'like', "%{$validated['quickSearch']}%")
                     ->orWhere('platform', 'like', "%{$validated['quickSearch']}%")
+                    ->orWhere('product_code', 'like', "%{$validated['quickSearch']}%")
                     ->orWhereHas('user', function ($userQuery) use ($validated) {
                         $userQuery->where('username', 'like', "%{$validated['quickSearch']}%");
                     });
@@ -40,6 +41,9 @@ class AgisoController extends BaseController
         if (! empty($validated['order_id'])) {
             $query->where('order_id', 'like', "%{$validated['order_id']}%");
         }
+        if (! empty($validated['product_code'])) {
+            $query->where('product_code', 'like', "%{$validated['product_code']}%");
+        }
         if (! empty($validated['tid'])) {
             $query->where('tid', 'like', "%{$validated['tid']}%");
         }
@@ -47,6 +51,9 @@ class AgisoController extends BaseController
             $query->whereHas('user', function ($userQuery) use ($validated) {
                 $userQuery->where('username', $validated['username']);
             });
+        }
+        if (isset($validated['period'])) {
+            $query->where('period', $validated['period']);
         }
         if (isset($validated['type'])) {
             $query->where('type', $validated['type']);
@@ -65,7 +72,7 @@ class AgisoController extends BaseController
             },
         ])
             ->select([
-                'id', 'platform', 'tid', 'type', 'price', 'count',
+                'id', 'platform', 'tid', 'type', 'price', 'count', 'product_code', 'period',
                 'amount', 'user_id', 'order_id', 'recharged', 'timestamp', 'created_at',
             ])
             ->orderBy('id', 'desc')

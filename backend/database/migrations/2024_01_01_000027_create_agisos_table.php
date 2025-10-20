@@ -23,9 +23,11 @@ return new class extends Migration
             $table->string('tid', 200)->comment('订单ID');
             $table->string('refund_id', 200)->nullable()->comment('退款ID');
             $table->string('status', 50)->nullable()->comment('订单状态');
-            $table->decimal('price', 10, 2)->nullable()->comment('价格');
+            $table->string('product_code', 100)->nullable()->comment('产品代码');
+            $table->unsignedSmallInteger('period')->nullable()->comment('周期(月)');
+            $table->decimal('price', 10)->nullable()->comment('价格');
             $table->unsignedSmallInteger('count')->default(1)->comment('件数');
-            $table->decimal('amount', 10, 2)->nullable()->comment('支付金额');
+            $table->decimal('amount', 10)->nullable()->comment('支付金额');
             $table->boolean('recharged')->default(0)->comment('充值状态:0=未充值,1=已充值');
             $table->timestamps();
 
@@ -36,6 +38,7 @@ return new class extends Migration
             $table->index('refund_id');
             $table->index('platform');
             $table->index('status');
+            $table->index('product_code');
             $table->index('recharged');
 
             // 外键约束

@@ -17,6 +17,8 @@ class Agiso extends BaseModel
         'tid',
         'refund_id',
         'status',
+        'product_code',
+        'period',
         'price',
         'count',
         'amount',
@@ -35,6 +37,8 @@ class Agiso extends BaseModel
         'recharged' => 'integer',
         'timestamp' => 'integer',
         'type' => 'integer',
+        'product_code' => 'string',
+        'period' => 'integer',
     ];
 
     /**
