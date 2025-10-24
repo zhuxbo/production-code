@@ -282,6 +282,16 @@ pre {
 .status-warning { background: #f59e0b; }
 .status-error { background: #ef4444; }
 
+/* 错误区域高亮动画 */
+@keyframes highlight {
+    0%, 100% { 
+        transform: scale(1); 
+    }
+    50% { 
+        transform: scale(1.02);
+    }
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
     .container {

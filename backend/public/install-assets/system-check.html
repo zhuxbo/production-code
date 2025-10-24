@@ -1,4 +1,11 @@
-<h2>系统环境检查</h2>
+<h2>
+    系统环境检查
+    <span class="toggle-btn" onclick="toggleSystemCheck()" style="font-size: 14px; font-weight: normal; margin-left: 10px;">
+        <span id="system-check-toggle-text">{{SYSTEM_CHECK_TOGGLE_TEXT}}</span>
+    </span>
+</h2>
+
+<div id="system-check-details" style="display: {{SYSTEM_CHECK_DISPLAY}};">
 
 <!-- PHP版本 -->
 <div class="requirement {{PHP_VERSION_STATUS}}">
@@ -9,7 +16,9 @@
 <!-- PHP扩展 -->
 <div class="requirement">
     <strong>PHP扩展:</strong>
-    <span class="toggle-btn" onclick="toggleExtensions()">展开/折叠</span>
+    <span class="toggle-btn" onclick="toggleExtensions()">
+        <span id="extensions-toggle-text">展开</span>
+    </span>
     <div
         id="extensions-list"
         style="display: none; margin-top: 10px; margin-left: 20px"
@@ -22,9 +31,9 @@
 <!-- 必需的PHP函数 -->
 <div class="requirement">
     <strong>必需的PHP函数:</strong>
-    <span class="toggle-btn" onclick="toggleRequiredFunctions()"
-        >展开/折叠</span
-    >
+    <span class="toggle-btn" onclick="toggleRequiredFunctions()">
+        <span id="required-functions-toggle-text">展开</span>
+    </span>
     <div
         id="required-functions-list"
         style="display: none; margin-top: 10px; margin-left: 20px"
@@ -37,9 +46,9 @@
 <!-- 可选的PHP函数 -->
 <div class="requirement">
     <strong>可选的PHP函数:</strong>
-    <span class="toggle-btn" onclick="toggleOptionalFunctions()"
-        >展开/折叠</span
-    >
+    <span class="toggle-btn" onclick="toggleOptionalFunctions()">
+        <span id="optional-functions-toggle-text">展开</span>
+    </span>
     <div
         id="optional-functions-list"
         style="display: none; margin-top: 10px; margin-left: 20px"
@@ -52,7 +61,9 @@
 <!-- 目录权限 -->
 <div class="requirement">
     <strong>目录权限:</strong>
-    <span class="toggle-btn" onclick="togglePermissions()">展开/折叠</span>
+    <span class="toggle-btn" onclick="togglePermissions()">
+        <span id="permissions-toggle-text">展开</span>
+    </span>
     <div
         id="permissions-list"
         style="display: none; margin-top: 10px; margin-left: 20px"
@@ -72,6 +83,13 @@
 <div class="requirement {{JAVA_STATUS}}">
     <strong>Java:</strong> {{JAVA_VALUE}}
     <small>(要求: 推荐安装 (用于生成JKS证书))</small>
+</div>
+
+</div>
+
+<!-- 系统检查摘要 -->
+<div id="system-check-summary" style="display: {{SYSTEM_CHECK_SUMMARY_DISPLAY}};">
+    {{SYSTEM_CHECK_SUMMARY_CONTENT}}
 </div>
 
 <!-- 错误信息 -->

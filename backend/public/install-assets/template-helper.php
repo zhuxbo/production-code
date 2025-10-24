@@ -5,12 +5,11 @@
  */
 class TemplateHelper
 {
-    private static $templatePath = 'install-assets/';
-
     /**
      * 加载模板文件
+     * @throws Exception
      */
-    public static function load($templateName)
+    public static function load($templateName): false|string
     {
         $templateFile = __DIR__.'/'.$templateName.'.html';
         if (! file_exists($templateFile)) {
@@ -22,8 +21,9 @@ class TemplateHelper
 
     /**
      * 渲染模板
+     * @throws Exception
      */
-    public static function render($templateName, $variables = [])
+    public static function render($templateName, $variables = []): array|false|string
     {
         $template = self::load($templateName);
 
@@ -37,14 +37,15 @@ class TemplateHelper
     /**
      * 生成错误或警告部分HTML
      */
-    public static function generateMessageSection($messages, $type = 'error')
+    public static function generateMessageSection($messages, $type = 'error'): string
     {
         if (empty($messages)) {
             return '';
         }
 
         $title = $type === 'error' ? '错误' : '警告';
-        $html = '<h2>'.$title.'</h2>';
+        $sectionId = $type === 'error' ? 'error-section' : 'warning-section';
+        $html = '<h2 id="'.$sectionId.'">'.$title.'</h2>';
         $html .= '<div class="log">';
 
         foreach ($messages as $message) {
@@ -59,7 +60,7 @@ class TemplateHelper
     /**
      * 生成单个检查项HTML
      */
-    public static function generateRequirementItem($name, $value, $status)
+    public static function generateRequirementItem($name, $value, $status): string
     {
         return '<div class="'.$status.'" style="padding: 5px;">'.
                htmlspecialchars($name).': '.htmlspecialchars($value).
@@ -69,7 +70,7 @@ class TemplateHelper
     /**
      * 生成检查项列表HTML
      */
-    public static function generateRequirementsList($items)
+    public static function generateRequirementsList($items): string
     {
         $html = '';
         foreach ($items as $item) {
@@ -82,7 +83,7 @@ class TemplateHelper
     /**
      * 生成总结信息HTML
      */
-    public static function generateSummary($allSuccess, $hasWarnings = false, $successText = '', $warningText = '', $errorText = '')
+    public static function generateSummary($allSuccess, $hasWarnings = false, $successText = '', $warningText = '', $errorText = ''): string
     {
         if ($allSuccess) {
             if ($hasWarnings) {

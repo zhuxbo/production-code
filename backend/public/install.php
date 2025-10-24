@@ -1,5 +1,7 @@
 <?php
 
+/** @noinspection PhpMultipleClassDeclarationsInspection */
+/** @noinspection JSUnresolvedReference */
 /** @noinspection DuplicatedCode */
 
 /**
@@ -85,12 +87,14 @@ if ($envExists) {
 
                 if ($adminsTable && $adminsTable->rowCount() > 0) {
                     // 检查管理员表是否有数据
+                    /** @noinspection SqlResolve */
                     $adminCount = $pdo->query('SELECT COUNT(*) FROM admins')->fetchColumn();
                     if ($adminCount > 0) {
                         $isInstalled = true;
                     }
                 } elseif ($usersTable && $usersTable->rowCount() > 0) {
                     // 如果没有管理员表，检查用户表
+                    /** @noinspection SqlResolve */
                     $stmt = $pdo->prepare('SELECT COUNT(*) FROM users');
                     $stmt->execute();
                     $userCount = $stmt->fetchColumn();
@@ -126,6 +130,8 @@ $config = [
     'db_password' => '',
     'redis_host' => '127.0.0.1',
     'redis_port' => '6379',
+    'redis_username' => '',
+    'redis_password' => '',
 ];
 
 // 从会话中恢复配置（如果存在）
@@ -196,19 +202,19 @@ if (isset($_POST['action'])) {
 
                 if (! $dbEmpty) {
                     $tablesList = implode(', ', $tables);
-                    $errors[] = '数据库不为空，包含'.count($tables).'个表 ('.(strlen($tablesList) > 100 ? substr($tablesList, 0, 100).'...' : $tablesList).')，必须使用空数据库进行安装';
+                    $errors[] = '数据库不为空，包含'.count($tables).'个表 ('.(strlen($tablesList) > 100 ? substr($tablesList, 0,
+                        100).'...' : $tablesList).')，必须使用空数据库进行安装';
                     $canProceed = false;
-                } else {
-                    $formStage = 'install';
                 }
+                // 注意：不要在这里设置 $formStage = 'install'，需要等 Redis 检测也成功后才能设置
 
                 $_SESSION['install_db_connected'] = $dbConnected;
                 $_SESSION['install_db_empty'] = $dbEmpty;
-
             } catch (PDOException $e) {
                 $errors[] = '无法连接到数据库: '.$e->getMessage();
                 $_SESSION['install_db_connected'] = false;
                 $_SESSION['install_db_empty'] = false;
+                $canProceed = false;
 
                 // 尝试测试服务器是否可访问
                 try {
@@ -224,15 +230,98 @@ if (isset($_POST['action'])) {
                 }
             }
 
-            // 测试Redis连接
-            if (extension_loaded('redis')) {
+            // 测试Redis连接（必选项）
+            if (! extension_loaded('redis')) {
+                $errors[] = 'Redis扩展未加载，请先安装并启用Redis扩展';
+                $canProceed = false;
+                $formStage = 'env';
+            } else {
+                $redisConnected = false;
+                $redisError = '';
+
                 try {
                     $redis = new Redis;
+
+                    // 尝试连接Redis
                     if (! $redis->connect($config['redis_host'], $config['redis_port'], 2)) {
-                        $warnings[] = '无法连接到Redis服务器，请检查Redis配置';
+                        $redisError = '无法连接到Redis服务器，请检查Redis主机和端口配置';
+                    } else {
+                        // 如果用户配置了密码，先进行认证
+                        if (! empty($config['redis_password'])) {
+                            try {
+                                // Redis 6.0+ 支持用户名和密码
+                                if (! empty($config['redis_username'])) {
+                                    $authResult = $redis->auth([$config['redis_username'], $config['redis_password']]);
+                                } else {
+                                    // 旧版Redis只使用密码
+                                    $authResult = $redis->auth($config['redis_password']);
+                                }
+
+                                if (! $authResult) {
+                                    $redisError = 'Redis认证失败，用户名或密码错误（请确认是否配置用户名）';
+                                } else {
+                                    // 认证成功后测试ping
+                                    try {
+                                        $pingResult = $redis->ping();
+                                        if ($pingResult === true || $pingResult === '+PONG' || $pingResult === 'PONG') {
+                                            $redisConnected = true;
+                                        } else {
+                                            $redisError = 'Redis认证成功但PING测试失败';
+                                        }
+                                    } catch (Exception $e2) {
+                                        $redisError = 'Redis认证成功但无法执行PING命令: '.$e2->getMessage();
+                                    }
+                                }
+                            } catch (Exception $e) {
+                                // 检查是否是认证相关的错误
+                                $errorMsg = $e->getMessage();
+                                if (stripos($errorMsg, 'WRONGPASS') !== false ||
+                                    stripos($errorMsg, 'invalid password') !== false ||
+                                    stripos($errorMsg, 'invalid username-password') !== false ||
+                                    stripos($errorMsg, 'ERR invalid password') !== false) {
+                                    $redisError = 'Redis认证失败，用户名或密码错误（请确认是否配置用户名）';
+                                } else {
+                                    $redisError = 'Redis认证过程出错: '.$errorMsg;
+                                }
+                            }
+                        } else {
+                            // 没有配置密码，直接尝试ping
+                            try {
+                                $pingResult = $redis->ping();
+                                if ($pingResult === true || $pingResult === '+PONG' || $pingResult === 'PONG') {
+                                    $redisConnected = true;
+                                } else {
+                                    $redisError = 'Redis PING测试返回异常结果';
+                                }
+                            } catch (Exception $e) {
+                                // ping失败，可能需要认证
+                                $errorMsg = $e->getMessage();
+                                if (stripos($errorMsg, 'NOAUTH') !== false ||
+                                    stripos($errorMsg, 'Authentication required') !== false) {
+                                    $redisError = 'Redis服务器需要密码认证，请填写Redis密码';
+                                } else {
+                                    $redisError = 'Redis PING测试失败: '.$errorMsg;
+                                }
+                            }
+                        }
+
+                        $redis->close();
                     }
                 } catch (Exception $e) {
-                    $warnings[] = 'Redis连接测试失败: '.$e->getMessage();
+                    $redisError = 'Redis连接测试失败: '.$e->getMessage();
+                }
+
+                // 如果Redis连接失败，添加错误并阻止继续
+                if (! $redisConnected) {
+                    $errors[] = $redisError ?: 'Redis连接失败，原因未知';
+                    $canProceed = false;
+                    // 重置表单阶段，强制用户修正配置
+                    $formStage = 'env';
+                } else {
+                    // Redis 连接成功，且之前没有设置错误，可以进入安装阶段
+                    if ($dbConnected && $dbEmpty && $canProceed) {
+                        $formStage = 'install';
+                    }
                 }
             }
         }
@@ -284,18 +373,15 @@ $isBaotaEnv = false;
 if (str_starts_with(__DIR__, '/www/wwwroot/')) {
     $isBaotaEnv = true;
     $phpBinary = '/www/server/php/83/bin/php';
-}
-// 方法2: 通过服务器环境变量判断
+} // 方法2: 通过服务器环境变量判断
 elseif (isset($_SERVER['DOCUMENT_ROOT']) && str_contains($_SERVER['DOCUMENT_ROOT'], '/www/wwwroot/')) {
     $isBaotaEnv = true;
     $phpBinary = '/www/server/php/83/bin/php';
-}
-// 方法3: 通过PHP配置路径判断
+} // 方法3: 通过PHP配置路径判断
 elseif (str_contains(ini_get('include_path'), '/www/server/')) {
     $isBaotaEnv = true;
     $phpBinary = '/www/server/php/83/bin/php';
-}
-// 方法4: 如果exec可用，通过命令行检测
+} // 方法4: 如果exec可用，通过命令行检测
 elseif ($execEnabled) {
     exec('which php 2>/dev/null', $phpPathOutput, $phpPathReturn);
     if ($phpPathReturn === 0 && ! empty($phpPathOutput)) {
@@ -317,17 +403,14 @@ foreach ($requiredExtensions as $extension) {
     // 方法1: extension_loaded
     if (extension_loaded($extension)) {
         $extensionLoaded = true;
-    }
-    // 方法2: 检查 get_loaded_extensions
+    } // 方法2: 检查 get_loaded_extensions
     elseif (in_array($extension, get_loaded_extensions())) {
         $extensionLoaded = true;
-    }
-    // 方法3: 对于 PDO 相关扩展的特殊处理
+    } // 方法3: 对于 PDO 相关扩展的特殊处理
     elseif ($extension === 'pdo_mysql' && extension_loaded('pdo')) {
         $drivers = PDO::getAvailableDrivers();
         $extensionLoaded = in_array('mysql', $drivers);
-    }
-    // 方法4: 使用 PHP CLI 检测（如果 exec 可用）
+    } // 方法4: 使用 PHP CLI 检测（如果 exec 可用）
     elseif ($execEnabled) {
         exec("$phpBinary -r \"echo extension_loaded('$extension') ? 'yes' : 'no';\" 2>&1", $output, $returnVar);
         if ($returnVar === 0 && isset($output[0]) && $output[0] === 'yes') {
@@ -377,7 +460,9 @@ foreach ($requiredFunctions as $funcName => $funcInfo) {
 
 // 检查可选的PHP函数
 $optionalFunctions = [
-    'proc_open' => ['desc' => '提升Composer性能', 'warning' => 'PHP proc_open函数被禁用。这不会阻止安装，但可能导致Composer使用备用解压方式，性能较慢且可能丢失UNIX权限。'],
+    'proc_open' => [
+        'desc' => '提升Composer性能', 'warning' => 'PHP proc_open函数被禁用。这不会阻止安装，但可能导致Composer使用备用解压方式，性能较慢且可能丢失UNIX权限。',
+    ],
 ];
 
 $optionalFunctionRequirements = [];
@@ -437,7 +522,7 @@ if ($execEnabled) {
                 $composerVersion = $matches[1];
                 // 检查版本是否低于2.8
                 if (version_compare($composerVersion, '2.8.0', '<')) {
-                    $warnings[] = "Composer版本 {$composerVersion} 低于推荐版本2.8，建议升级到最新版本以获得更好的性能和稳定性。";
+                    $warnings[] = "Composer版本 $composerVersion 低于推荐版本2.8，建议升级到最新版本以获得更好的性能和稳定性。";
                 }
             } else {
                 $composerVersion = htmlspecialchars($composerVersionOutput[0]);
@@ -469,9 +554,9 @@ if ($execEnabled) {
                 // 提取主版本号进行比较
                 preg_match('/^(\d+)/', $javaVersion, $majorVersionMatches);
                 if (isset($majorVersionMatches[1])) {
-                    $majorVersion = (int)$majorVersionMatches[1];
+                    $majorVersion = (int) $majorVersionMatches[1];
                     if ($majorVersion < 17) {
-                        $warnings[] = "Java版本 {$javaVersion} 低于推荐版本17，建议升级到Java 17或更高版本以获得更好的性能和安全性。";
+                        $warnings[] = "Java版本 $javaVersion 低于推荐版本17，建议升级到Java 17或更高版本以获得更好的性能和安全性。";
                     }
                 }
             } else {
@@ -604,7 +689,8 @@ if (isset($_GET['debug']) && $_GET['debug'] === '1') {
                     if ($adminsResult && $adminsResult->rowCount() > 0) {
                         echo "<span style='color: green;'>✓ admins表存在</span><br>";
 
-                        $adminCount = $pdo->query('SELECT COUNT(*) FROM admins')->fetchColumn();
+                        /** @noinspection SqlResolve */
+                        $adminCount = $pdo->query('SELECT COUNT(*) FROM `admins`')->fetchColumn();
                         echo "管理员数量: $adminCount<br>";
 
                         if ($adminCount > 0) {
@@ -621,7 +707,8 @@ if (isset($_GET['debug']) && $_GET['debug'] === '1') {
                     if ($usersResult && $usersResult->rowCount() > 0) {
                         echo "<span style='color: green;'>✓ users表存在</span><br>";
 
-                        $userCount = $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
+                        /** @noinspection SqlResolve */
+                        $userCount = $pdo->query('SELECT COUNT(*) FROM `users`')->fetchColumn();
                         echo "用户数量: $userCount<br>";
 
                         if ($userCount > 0) {
@@ -636,14 +723,12 @@ if (isset($_GET['debug']) && $_GET['debug'] === '1') {
                     // 检查其他表
                     $tables = $pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
                     echo '数据库中的表: '.implode(', ', $tables).'<br>';
-
                 } catch (PDOException $e) {
                     echo "<span style='color: red;'>✗ 数据库连接失败: ".htmlspecialchars($e->getMessage()).'</span><br>';
                 }
             } else {
                 echo "<span style='color: red;'>✗ 数据库配置不完整</span><br>";
             }
-
         } catch (Exception $e) {
             echo "<span style='color: red;'>✗ 检测过程出错: ".htmlspecialchars($e->getMessage()).'</span><br>';
         }
@@ -678,6 +763,65 @@ if ($isInstalled) {
 
 // 输出系统检查结果
 if ($formStage == 'env') {
+    // 判断系统环境检查是否都通过
+    $systemCheckPassed = $phpVersionValid &&
+                         $extensionSuccess &&
+                         $requiredFunctionsSuccess &&
+                         $permissionsSuccess &&
+                         $composerInstalled;
+
+    // 判断所有检查（包括配置）是否都通过
+    $allChecksPassed = $systemCheckPassed && empty($errors);
+
+    // 如果是POST提交后有配置错误，系统检查应该折叠
+    // 如果是系统环境本身有问题，应该展开
+    $isConfigError = isset($_POST['action']) && $_POST['action'] == 'config' && ! empty($errors);
+    $shouldCollapseSystemCheck = $allChecksPassed || ($systemCheckPassed && $isConfigError);
+
+    // 生成系统检查摘要内容
+    $summaryContent = '';
+    if ($systemCheckPassed) {
+        // 系统检查通过
+        if ($optionalFunctionsHasWarnings || ! $javaInstalled) {
+            // 有警告
+            $summaryContent = '<div class="requirement success" style="padding: 15px; margin: 10px 0;">
+                ✓ 系统环境检查已通过，可以继续安装
+            </div>
+            <div class="requirement warning" style="padding: 15px; margin: 10px 0;">
+                ⚠ 存在一些可选项警告，建议查看详情
+            </div>';
+        } else {
+            // 完全通过
+            $summaryContent = '<div class="requirement success" style="padding: 15px; margin: 10px 0;">
+                ✓ 所有系统环境检查已通过，可以继续安装
+            </div>';
+        }
+    } else {
+        // 系统检查有错误
+        $errorItems = [];
+        if (! $phpVersionValid) {
+            $errorItems[] = 'PHP版本不符合要求';
+        }
+        if (! $extensionSuccess) {
+            $errorItems[] = '缺少必需的PHP扩展';
+        }
+        if (! $requiredFunctionsSuccess) {
+            $errorItems[] = '必需的PHP函数被禁用';
+        }
+        if (! $permissionsSuccess) {
+            $errorItems[] = '目录权限不足';
+        }
+        if (! $composerInstalled) {
+            $errorItems[] = 'Composer未安装';
+        }
+
+        $errorList = implode('、', $errorItems);
+        $summaryContent = '<div class="requirement error" style="padding: 15px; margin: 10px 0;">
+            ✘ 系统环境检查未通过：'.$errorList.'<br>
+            <small style="margin-top: 8px; display: block;">请点击"展开"查看详细信息并解决问题</small>
+        </div>';
+    }
+
     // 准备模板变量
     $templateVars = [
         'PHP_VERSION_STATUS' => $phpVersionValid ? 'success' : 'error',
@@ -727,12 +871,19 @@ if ($formStage == 'env') {
 
         'ERRORS_SECTION' => TemplateHelper::generateMessageSection($errors),
         'WARNINGS_SECTION' => TemplateHelper::generateMessageSection($warnings, 'warning'),
+
+        // 系统检查折叠控制
+        'SYSTEM_CHECK_DISPLAY' => $shouldCollapseSystemCheck ? 'none' : 'block',
+        'SYSTEM_CHECK_SUMMARY_DISPLAY' => $shouldCollapseSystemCheck ? 'block' : 'none',
+        'SYSTEM_CHECK_TOGGLE_TEXT' => $shouldCollapseSystemCheck ? '展开' : '折叠',
+        'SYSTEM_CHECK_SUMMARY_CONTENT' => $summaryContent,
     ];
 
+    /** @noinspection PhpUnhandledExceptionInspection */
     echo TemplateHelper::render('system-check', $templateVars);
 
-    // 如果满足基本要求，显示配置表单
-    if ($canProceed && $showConfigForm) {
+    // 显示配置表单（在配置阶段总是显示，让用户可以修正错误）
+    if ($showConfigForm) {
         $configVars = [
             'DB_HOST' => htmlspecialchars($config['db_host']),
             'DB_PORT' => htmlspecialchars($config['db_port']),
@@ -741,13 +892,14 @@ if ($formStage == 'env') {
             'DB_PASSWORD' => htmlspecialchars($config['db_password']),
             'REDIS_HOST' => htmlspecialchars($config['redis_host']),
             'REDIS_PORT' => htmlspecialchars($config['redis_port']),
+            'REDIS_USERNAME' => htmlspecialchars($config['redis_username']),
+            'REDIS_PASSWORD' => htmlspecialchars($config['redis_password']),
         ];
 
+        /** @noinspection PhpUnhandledExceptionInspection */
         echo TemplateHelper::render('config-form', $configVars);
     }
-}
-
-// 安装阶段
+} // 安装阶段
 elseif ($formStage == 'install') {
     // 开始安装准备区域
     echo '<h2>安装准备</h2>';
@@ -841,6 +993,21 @@ elseif ($formStage == 'install') {
                 $envTemplate = preg_replace('/REDIS_HOST=.*/', 'REDIS_HOST='.$config['redis_host'], $envTemplate);
                 $envTemplate = preg_replace('/REDIS_PORT=.*/', 'REDIS_PORT='.$config['redis_port'], $envTemplate);
 
+                // 设置 Redis 认证信息
+                if (str_contains($envTemplate, 'REDIS_USERNAME=')) {
+                    $envTemplate = preg_replace('/REDIS_USERNAME=.*/', 'REDIS_USERNAME='.$config['redis_username'], $envTemplate);
+                } else {
+                    // 在 REDIS_PORT 后面添加 REDIS_USERNAME
+                    $envTemplate = preg_replace('/(REDIS_PORT=.*)/', "$1\nREDIS_USERNAME=".$config['redis_username'], $envTemplate);
+                }
+
+                if (str_contains($envTemplate, 'REDIS_PASSWORD=')) {
+                    $envTemplate = preg_replace('/REDIS_PASSWORD=.*/', 'REDIS_PASSWORD='.$config['redis_password'], $envTemplate);
+                } else {
+                    // 在 REDIS_USERNAME 后面添加 REDIS_PASSWORD
+                    $envTemplate = preg_replace('/(REDIS_USERNAME=.*)/', "$1\nREDIS_PASSWORD=".$config['redis_password'], $envTemplate);
+                }
+
                 $host = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? '';
                 $appUrl = $host ? 'https://'.$host : '';
                 $envTemplate = preg_replace('/APP_URL=.*/', 'APP_URL='.$appUrl, $envTemplate);
@@ -864,7 +1031,8 @@ elseif ($formStage == 'install') {
                 </script>';
                 flush();
 
-                exec('cd '.$projectRoot.' && composer install --no-interaction --no-dev --optimize-autoloader --no-scripts 2>&1', $composerOutput, $composerReturnVar);
+                exec('cd '.$projectRoot.' && composer install --no-interaction --no-dev --optimize-autoloader --no-scripts 2>&1', $composerOutput,
+                    $composerReturnVar);
 
                 $composerOutputHtml = htmlspecialchars(implode("\n", $composerOutput));
                 echo '<script>
@@ -1082,7 +1250,6 @@ unlink(__FILE__);
                     echo '<strong>Java提示：</strong> 未检测到Java命令。如果需要使用keytool生成JKS格式证书等功能，请确保JDK或JRE已正确安装并配置到系统PATH。';
                     echo '</div>';
                 }
-
             } catch (Exception $e) {
                 $errorMessage = htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8');
                 echo '<script>

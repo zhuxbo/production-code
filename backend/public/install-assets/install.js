@@ -1,31 +1,82 @@
 // 切换显示/隐藏扩展列表
 function toggleExtensions() {
     var list = document.getElementById("extensions-list");
-    list.style.display = list.style.display === "none" ? "block" : "none";
+    var toggleText = document.getElementById("extensions-toggle-text");
+    
+    if (list.style.display === "none") {
+        list.style.display = "block";
+        if (toggleText) toggleText.textContent = "折叠";
+    } else {
+        list.style.display = "none";
+        if (toggleText) toggleText.textContent = "展开";
+    }
 }
 
 // 切换显示/隐藏权限列表
 function togglePermissions() {
     var list = document.getElementById("permissions-list");
-    list.style.display = list.style.display === "none" ? "block" : "none";
+    var toggleText = document.getElementById("permissions-toggle-text");
+    
+    if (list.style.display === "none") {
+        list.style.display = "block";
+        if (toggleText) toggleText.textContent = "折叠";
+    } else {
+        list.style.display = "none";
+        if (toggleText) toggleText.textContent = "展开";
+    }
 }
 
 // 切换显示/隐藏必需PHP函数列表
 function toggleRequiredFunctions() {
     var list = document.getElementById("required-functions-list");
-    list.style.display = list.style.display === "none" ? "block" : "none";
+    var toggleText = document.getElementById("required-functions-toggle-text");
+    
+    if (list.style.display === "none") {
+        list.style.display = "block";
+        if (toggleText) toggleText.textContent = "折叠";
+    } else {
+        list.style.display = "none";
+        if (toggleText) toggleText.textContent = "展开";
+    }
 }
 
 // 切换显示/隐藏可选PHP函数列表
 function toggleOptionalFunctions() {
     var list = document.getElementById("optional-functions-list");
-    list.style.display = list.style.display === "none" ? "block" : "none";
+    var toggleText = document.getElementById("optional-functions-toggle-text");
+    
+    if (list.style.display === "none") {
+        list.style.display = "block";
+        if (toggleText) toggleText.textContent = "折叠";
+    } else {
+        list.style.display = "none";
+        if (toggleText) toggleText.textContent = "展开";
+    }
 }
 
 // 切换显示/隐藏PHP函数列表 (向后兼容)
 function toggleFunctions() {
     toggleRequiredFunctions();
     toggleOptionalFunctions();
+}
+
+// 切换显示/隐藏整个系统环境检查
+function toggleSystemCheck() {
+    var details = document.getElementById("system-check-details");
+    var summary = document.getElementById("system-check-summary");
+    var toggleText = document.getElementById("system-check-toggle-text");
+    
+    if (details && summary && toggleText) {
+        if (details.style.display === "none") {
+            details.style.display = "block";
+            summary.style.display = "none";
+            toggleText.textContent = "折叠";
+        } else {
+            details.style.display = "none";
+            summary.style.display = "block";
+            toggleText.textContent = "展开";
+        }
+    }
 }
 
 // 准备并提交安装表单
@@ -66,6 +117,19 @@ function decodeHtmlEntities(text) {
 
 // 当文档加载完成时运行
 document.addEventListener("DOMContentLoaded", function () {
+    // 如果页面有错误信息，自动滚动到错误位置
+    var errorSection = document.getElementById("error-section");
+    if (errorSection) {
+        setTimeout(function() {
+            errorSection.scrollIntoView({ 
+                behavior: "smooth", 
+                block: "center" 
+            });
+            // 高亮显示错误区域
+            errorSection.style.animation = "highlight 1s ease-in-out";
+        }, 300);
+    }
+    
     // 配置表单提交事件监听
     var configForm = document.getElementById("config-form");
     if (configForm) {

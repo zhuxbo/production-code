@@ -82,6 +82,28 @@
                 required
             />
         </div>
+
+        <div class="form-group">
+            <label for="redis_username">Redis用户名 (可选，Redis 6.0+):</label>
+            <input
+                type="text"
+                id="redis_username"
+                name="redis_username"
+                value="{{REDIS_USERNAME}}"
+                placeholder="留空表示未配置用户名认证"
+            />
+        </div>
+
+        <div class="form-group">
+            <label for="redis_password">Redis密码 (可选):</label>
+            <input
+                type="password"
+                id="redis_password"
+                name="redis_password"
+                value="{{REDIS_PASSWORD}}"
+                placeholder="留空表示未配置密码认证"
+            />
+        </div>
     </div>
 
     <input type="hidden" name="action" value="config" />
