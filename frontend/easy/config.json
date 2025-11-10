@@ -1,0 +1,9 @@
+{
+  "baseURL": "/api/easy",
+  "siteURL": "https://www.pzo.cn",
+  "helpURL": "https://help.pzo.cn",
+  "dnsTools": [
+    "https://dns-tools-us.cnssl.com",
+    "https://dns-tools-cn.cnssl.com"
+  ]
+}

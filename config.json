@@ -1,0 +1,14 @@
+{
+  "version": "20251111012006",
+  "build_time": "2025-11-11T01:20:06+08:00",
+  "build_module": "api",
+  "php_version": "PHP 8.3.26 (cli) (built: Oct  1 2025 20:35:14) (NTS)",
+  "node_version": "v22.21.0",
+  "composer_version": "Composer version 2.8.12 2025-09-19 13:41:59",
+  "commits": {
+    "backend_commit": "4b41a1c2b5b663b1cfc9f3f02b985de8552c6f05",
+    "admin_commit": "0fbae9247c1659e897ffa6f535a27d2ae9c5581f",
+    "user_commit": "acbe9ddaaf139cd4a8f71fa38829b15ab0b7938c",
+    "easy_commit": "7973fcdcf5b579b46555c430909422d4f17cb9d1"
+  }
+}

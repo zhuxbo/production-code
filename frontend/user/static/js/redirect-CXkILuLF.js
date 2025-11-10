@@ -1,0 +1,1 @@
+import{i as s,F as c,z as p,y as u,o as i}from"./index-CWbaxONR.js";const l=s({name:"Redirect",__name:"redirect",setup(_){const{currentRoute:r,replace:t}=c(),{params:a,query:n}=p(r),{path:e}=a,o=Array.isArray(e)?e.join("/"):e;return t({path:"/"+o,query:n}),(m,d)=>(i(),u("div"))}});export{l as default};
