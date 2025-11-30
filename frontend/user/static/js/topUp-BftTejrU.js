@@ -1,0 +1,1 @@
+import{I as t,aD as o,aE as s,aF as i}from"./index-Cg5p18Z4.js";const n=t("topUpDialog",{state:()=>({visible:!1}),actions:{showDialog(){this.visible=!0},hideDialog(){this.visible=!1},updateBalance(){o().then(e=>{const a=s();a.balance=e.data.balance,i(a)})}}});export{n as t};

@@ -1,0 +1,1 @@
+import{H as e}from"./index-Bm2yeQdd.js";function o(t){return e.get("/notification-template",{params:t})}function a(t){return e.post("/notification-template",{data:t})}function r(t,n){return e.put(`/notification-template/${t}`,{data:n})}function u(t){return e.delete(`/notification-template/${t}`)}export{u as d,o as i,a as s,r as u};
