@@ -1,0 +1,1 @@
+import{r as t,o as s,aA as a}from"./index-2C-ofHV5.js";function d(){const e=t(600),n=()=>{const o=window.innerWidth;o>2e3?e.value="30%":o>=600?e.value=600:e.value="90%"},i=()=>{n()};return s(()=>{n(),window.addEventListener("resize",i)}),a(()=>{window.removeEventListener("resize",i)}),{dialogSize:e}}export{d as u};

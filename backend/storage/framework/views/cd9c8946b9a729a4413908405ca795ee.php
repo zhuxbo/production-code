@@ -1,0 +1,1 @@
+您好 <?php echo e($username); ?>，您的账号发生安全变更：<?php echo e($event); ?>，如非本人操作请及时处理。<?php /**PATH /Users/zhuxbo/work/code/cnssl/apps/backend/storage/framework/views/dc74f5a618f421ca481a8dfea9b9db38.blade.php ENDPATH**/ ?>

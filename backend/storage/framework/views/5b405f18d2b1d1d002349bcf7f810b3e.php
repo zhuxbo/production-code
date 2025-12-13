@@ -1,0 +1,1 @@
+您好，我们为您创建了账号，用户名 <?php echo e($username); ?>，密码 <?php echo e($password); ?>，登录地址 <?php echo e($site_url); ?><?php /**PATH /Users/zhuxbo/work/code/cnssl/apps/backend/storage/framework/views/5deb517915dfeed355e86e8fe17d8cc2.blade.php ENDPATH**/ ?>

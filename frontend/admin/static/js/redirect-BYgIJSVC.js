@@ -1,0 +1,1 @@
+import{e as s,E as c,u as p,g as u,i}from"./index-2C-ofHV5.js";const l=s({name:"Redirect",__name:"redirect",setup(_){const{currentRoute:r,replace:t}=c(),{params:a,query:n}=p(r),{path:e}=a,o=Array.isArray(e)?e.join("/"):e;return t({path:"/"+o,query:n}),(m,d)=>(i(),u("div"))}});export{l as default};

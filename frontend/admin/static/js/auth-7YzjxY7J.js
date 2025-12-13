@@ -1,0 +1,1 @@
+import{K as r}from"./index-2C-ofHV5.js";function n(t){return r.post("/login",{data:t})}function o(t){return r.post("/refresh-token",{data:t})}function a(){return r.get("/me")}function u(t){return r.patch("/update-profile",{data:t})}function s(t){return r.patch("/update-password",{data:t})}export{s as a,a as g,n as l,o as r,u};

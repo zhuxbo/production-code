@@ -1,0 +1,19 @@
+# 操作系统文件
+.DS_Store
+.AppleDouble
+.LSOverride
+__MACOSX/
+.Spotlight-V100/
+.Trashes
+.fseventsd
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+._*
+$RECYCLE.BIN/
+
+# 编辑器/工具
+.idea/
+.vscode/
+.history/
+*.log

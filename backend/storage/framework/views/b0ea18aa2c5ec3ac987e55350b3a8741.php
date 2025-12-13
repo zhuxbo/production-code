@@ -1,0 +1,1 @@
+Hello <?php echo e($username); ?><?php /**PATH /Users/zhuxbo/work/code/cnssl/apps/backend/storage/framework/views/34e508fe9d7dfa0c5fd25098392f9786.blade.php ENDPATH**/ ?>

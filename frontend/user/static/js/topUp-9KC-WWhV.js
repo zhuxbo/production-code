@@ -1,0 +1,1 @@
+import{R as t,aI as o,aJ as i}from"./index-D5efkW8k.js";import{g as s}from"./auth-8X049xxM.js";const r=t("topUpDialog",{state:()=>({visible:!1}),actions:{showDialog(){this.visible=!0},hideDialog(){this.visible=!1},updateBalance(){s().then(a=>{const e=o();e&&(e.balance=a.data.balance,i(e))})}}});export{r as t};
